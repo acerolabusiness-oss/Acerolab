@@ -2,6 +2,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%225%20-12%20110%20128%22%3E%3Cpath%20d%3D%22M50%2020%20C36%2012%2024%2016%2020%2026%20C32%2034%2044%2031%2050%2020Z%22%20fill%3D%22%233F6B4E%22/%3E%3Cpath%20d%3D%22M50%2022%20C50%2010%2058%204%2070%203%22%20fill%3D%22none%22%20stroke%3D%22%233F6B4E%22%20stroke-width%3D%224.6%22%20stroke-linecap%3D%22round%22/%3E%3Cpath%20d%3D%22M12.00%2058.00A38.00%2038.00%200%201%200%2088.00%2058.00A38.00%2038.00%200%201%200%2012.00%2058.00Z%20M65.47%2056.24Q68.51%2058.00%2065.47%2059.76L47.61%2070.07Q44.57%2071.82%2044.57%2068.31L44.57%2047.69Q44.57%2044.18%2047.61%2045.93Z%22%20fill-rule%3D%22evenodd%22%20fill%3D%22%23E8253D%22/%3E%3C/svg%3E">
 
+<meta name="description" content="Escolha o assunto uma vez. A partir daí a ACEROLAB escreve, narra, ilustra e monta — e de manhã tem vídeo novo esperando.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ACEROLAB">
+<meta property="og:title" content="Seu canal posta todo dia. Você nunca aparece.">
+<meta property="og:description" content="Escolha o assunto uma vez. A partir daí a ACEROLAB escreve, narra, ilustra e monta — e de manhã tem vídeo novo esperando.">
+<meta property="og:image" content="https://www.acerolab.com.br/estatico/og/capa.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://www.acerolab.com.br/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Seu canal posta todo dia. Você nunca aparece.">
+<meta name="twitter:description" content="Escolha o assunto uma vez. A partir daí a ACEROLAB escreve, narra, ilustra e monta — e de manhã tem vídeo novo esperando.">
+<meta name="twitter:image" content="https://www.acerolab.com.br/estatico/og/capa.jpg">
+
 <style>
   @font-face {
     font-family: "Outfit";
@@ -420,6 +434,9 @@
 
   /* ---------- depoimentos ---------- */
   .depo {
+    /* figure vem com margin 1em 40px do navegador: sem zerar, o card encolhe
+       80px dentro da coluna e o texto quebra em linha demais */
+    margin: 0;
     background: var(--papel); border: 1px solid var(--linha);
     border-radius: var(--raio); padding: 24px;
     display: flex; flex-direction: column; gap: 16px; box-shadow: var(--sombra);
