@@ -21,7 +21,7 @@ from fastapi.templating import Jinja2Templates
 
 from esteira.config import RAIZ, Ambiente, carregar_env
 
-from . import catalogo, contas, fila, legal, pagamento, planos, supabase, temas
+from . import catalogo, contas, fila, google_login, legal, pagamento, planos, supabase, temas
 from .banco import aberto, agora, inserir, preparar, um, varios
 
 AQUI = Path(__file__).resolve().parent
@@ -80,7 +80,7 @@ def tela(request: Request, pagina: str, **ctx) -> HTMLResponse:
     # o aviso de chaves fala de geração de vídeo; em tela de pagamento é ruído
     ctx.setdefault("faltando_chaves",
                    [] if pagina == "planos.html" else Ambiente().faltando())
-    ctx.setdefault("tem_google", supabase.configurado())
+    ctx.setdefault("tem_google", google_login.configurado())
     return paginas.TemplateResponse(request, pagina, ctx)
 
 
@@ -179,47 +179,49 @@ def cadastrar(request: Request, email: str = Form(...), senha: str = Form(...),
 
 # ─────────────────────── entrar com o Google ─────────────────────────
 
-VERIFICADOR = "acerolab_pkce"
+ESTADO_GOOGLE = "acerolab_estado_google"
 
 
 @app.get("/entrar/google")
 def entrar_google(request: Request):
-    """Manda a pessoa pro Google, guardando o verificador do PKCE aqui."""
-    if not supabase.configurado():
+    """Manda a pessoa pro Google, guardando o estado (anti-CSRF) aqui."""
+    if not google_login.configurado():
         return RedirectResponse(
             "/entrar?erro=" + quote("Login com Google ainda não está ligado neste servidor."),
             status_code=303)
 
-    verificador = supabase.novo_verificador()
+    estado = google_login.novo_estado()
     volta = str(request.url_for("entrar_retorno"))
-    resposta = RedirectResponse(supabase.url_google(volta, verificador), status_code=303)
+    resposta = RedirectResponse(google_login.url_login(volta, estado), status_code=303)
     # dura poucos minutos: é só a ida e a volta do Google
-    resposta.set_cookie(VERIFICADOR, verificador, httponly=True, samesite="lax",
+    resposta.set_cookie(ESTADO_GOOGLE, estado, httponly=True, samesite="lax",
                         max_age=600, path="/entrar")
     return resposta
 
 
 @app.get("/entrar/retorno", name="entrar_retorno")
-def entrar_retorno(request: Request, code: str = "", error_description: str = ""):
+def entrar_retorno(request: Request, code: str = "", state: str = "",
+                   error_description: str = ""):
     if error_description:
         return RedirectResponse("/entrar?erro=" + quote(error_description[:200]),
                                 status_code=303)
 
-    verificador = request.cookies.get(VERIFICADOR)
-    if not code or not verificador:
+    estado_esperado = request.cookies.get(ESTADO_GOOGLE)
+    if not code or not state or state != estado_esperado:
         return RedirectResponse(
             "/entrar?erro=" + quote("A volta do Google expirou. Tente de novo."),
             status_code=303)
 
     try:
-        pessoa = supabase.trocar_codigo(code, verificador)
+        volta = str(request.url_for("entrar_retorno"))
+        pessoa = google_login.trocar_codigo(code, volta)
         with aberto() as con:
             usuario_id, novo = contas.vincular(con, pessoa)
-    except (contas.Recusado, supabase.Recusado) as erro:
+    except (contas.Recusado, google_login.Recusado) as erro:
         return RedirectResponse("/entrar?erro=" + quote(str(erro)[:200]), status_code=303)
 
     resposta = _com_sessao("/comecar" if novo else "/series", usuario_id, request)
-    resposta.delete_cookie(VERIFICADOR, path="/entrar")
+    resposta.delete_cookie(ESTADO_GOOGLE, path="/entrar")
     return resposta
 
 
