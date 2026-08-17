@@ -21,7 +21,7 @@ from fastapi.templating import Jinja2Templates
 
 from esteira.config import RAIZ, Ambiente, carregar_env
 
-from . import catalogo, contas, fila, google_login, legal, pagamento, planos, supabase, temas
+from . import admin, catalogo, contas, fila, google_login, legal, pagamento, planos, supabase, temas
 from .banco import aberto, agora, inserir, preparar, um, varios
 
 AQUI = Path(__file__).resolve().parent
@@ -81,6 +81,7 @@ def tela(request: Request, pagina: str, **ctx) -> HTMLResponse:
     ctx.setdefault("faltando_chaves",
                    [] if pagina == "planos.html" else Ambiente().faltando())
     ctx.setdefault("tem_google", google_login.configurado())
+    ctx.setdefault("eh_admin", admin.eh_admin(ctx["usuario"]))
     return paginas.TemplateResponse(request, pagina, ctx)
 
 
@@ -392,6 +393,19 @@ def sair(request: Request):
 @app.get("/comecar", response_class=HTMLResponse)
 def comecar(request: Request, usuario=Depends(exigir)):
     return tela(request, "comecar.html")
+
+
+# ───────────────────────────── admin ─────────────────────────────────
+
+@app.get("/admin", response_class=HTMLResponse)
+def admin_painel(request: Request, usuario=Depends(exigir)):
+    if not admin.eh_admin(usuario):
+        raise HTTPException(status_code=404)
+    with aberto() as con:
+        return tela(request, "admin.html",
+                    resumo=admin.resumo(con),
+                    cadastros=admin.cadastros_por_dia(con),
+                    usuarios=admin.usuarios_com_uso(con))
 
 
 # ───────────────────────────── séries ────────────────────────────────

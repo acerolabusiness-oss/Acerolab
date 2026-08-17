@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block titulo %}Admin — ACEROLAB{% endblock %}
+
+{% block corpo %}
+<h1>Admin</h1>
+<p class="legenda-topo">Quem se cadastrou, quanto está sendo usado e quanto está entrando — direto do nosso banco, já que o login com Google não passa mais pela Supabase.</p>
+
+<div class="grade dois" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr));margin-bottom:28px">
+  <div class="cartao">
+    <div class="selo" style="margin-bottom:8px">Usuários</div>
+    <div style="font-size:28px;font-weight:700" class="num">{{ resumo.usuarios }}</div>
+  </div>
+  <div class="cartao">
+    <div class="selo" style="margin-bottom:8px">Séries ativas</div>
+    <div style="font-size:28px;font-weight:700" class="num">{{ resumo.series }}</div>
+  </div>
+  <div class="cartao">
+    <div class="selo" style="margin-bottom:8px">Assinaturas ativas</div>
+    <div style="font-size:28px;font-weight:700" class="num">{{ resumo.assinaturas_ativas }}</div>
+  </div>
+  <div class="cartao">
+    <div class="selo" style="margin-bottom:8px">MRR</div>
+    <div style="font-size:28px;font-weight:700" class="num">{{ resumo.mrr_reais|moeda }}</div>
+  </div>
+  <div class="cartao">
+    <div class="selo" style="margin-bottom:8px">Custo gerado</div>
+    <div style="font-size:28px;font-weight:700" class="num">{{ resumo.custo_reais|moeda }}</div>
+  </div>
+</div>
+
+<div class="cartao" style="margin-bottom:28px">
+  <h2 style="font-size:16px;margin:0 0 4px">Cadastros — últimos 30 dias</h2>
+  <p style="margin:0 0 18px;color:var(--tinta-2);font-size:13.5px">
+    {{ resumo.videos_prontos }} vídeo{{ 's' if resumo.videos_prontos != 1 }} pronto{{ 's' if resumo.videos_prontos != 1 }} ·
+    {{ resumo.videos_na_fila }} na fila ·
+    {{ resumo.videos_falharam }} falhou{{ 'aram' if resumo.videos_falharam != 1 }}
+  </p>
+  {% set maximo = (cadastros|map(attribute='c')|max) or 1 %}
+  <div style="display:flex;align-items:flex-end;gap:3px;height:90px">
+    {% for dia in cadastros %}
+    <div title="{{ dia.dia }}: {{ dia.c }}"
+         style="flex:1;min-width:2px;border-radius:2px 2px 0 0;
+                background:{{ 'var(--acerola)' if dia.c else 'var(--regua)' }};
+                height:{{ (dia.c / maximo * 100)|round(1) if dia.c else 2 }}%"></div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="cartao">
+  <h2 style="font-size:16px;margin:0 0 16px">Usuários</h2>
+  <div class="rolagem">
+    <table>
+      <tr>
+        <th>E-mail</th>
+        <th>Nome</th>
+        <th>Entrou por</th>
+        <th>Plano</th>
+        <th class="num">Séries</th>
+        <th class="num">Vídeos prontos</th>
+        <th>Cadastrado em</th>
+      </tr>
+      {% for u in usuarios %}
+      <tr>
+        <td>{{ u['email'] }}</td>
+        <td>{{ u['nome'] or '—' }}</td>
+        <td>{{ 'Google' if not u['senha'] else 'E-mail e senha' }}</td>
+        <td>{{ u['plano'] or '—' }}</td>
+        <td class="num">{{ u['n_series'] }}</td>
+        <td class="num">{{ u['n_videos'] }}</td>
+        <td>{{ u['criado_em'][:10] }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+{% endblock %}
