@@ -1,1 +1,1 @@
-web: .venv/bin/python -m plataforma
+web: python -m plataforma --publico
