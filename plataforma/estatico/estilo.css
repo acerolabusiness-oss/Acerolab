@@ -1,0 +1,767 @@
+/* ACEROLAB — folha única.
+   Vermelho acerola é a ÚNICA cor do produto; o resto é cinza de propósito,
+   para o vermelho significar alguma coisa quando aparece. */
+
+@font-face{font-family:'Outfit';font-style:normal;font-weight:100 900;font-display:swap;
+  src:url(/estatico/fontes/outfit-var.woff2) format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:400 700;font-display:swap;
+  src:url(/estatico/fontes/inter-var.woff2) format('woff2')}
+
+:root{
+  --fundo:#FAFAFB;
+  --papel:#FFFFFF;
+  --painel:#F2F2F3;
+  --painel-2:#E9E9EB;
+  --tinta:#17171A;
+  --tinta-2:#55555E;
+  --tinta-3:#8A8A93;
+  --regua:#E3E3E6;
+  --acerola:#D31C33;
+  --acerola-escuro:#B01429;
+  --ok:#1F7A46;
+  --alerta:#8A5A00;
+  --raio:10px;
+  --sombra:0 1px 2px rgba(20,20,25,.06), 0 6px 18px rgba(20,20,25,.04);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-tema="claro"]){
+    --fundo:#131315; --papel:#1A1A1D; --painel:#202024; --painel-2:#2A2A30;
+    --tinta:#F1F1F3; --tinta-2:#B0B0B8; --tinta-3:#7E7E88;
+    --regua:#2C2C32; --acerola:#FF4D62; --acerola-escuro:#FF6B7C;
+    --ok:#4ADE80; --alerta:#FBBF24;
+    --sombra:0 1px 2px rgba(0,0,0,.4);
+  }
+}
+
+*{box-sizing:border-box}
+/* `hidden` tem que ganhar de qualquer display que a gente declare depois —
+   senão botão escondido pelo JS continua aparecendo. */
+[hidden]{display:none !important}
+html,body{height:100%}
+body{
+  margin:0;background:var(--fundo);color:var(--tinta);
+  font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit}
+h1,h2,h3,.display{font-family:'Outfit','Inter',sans-serif;letter-spacing:-.018em}
+
+/* ───────────── estrutura ───────────── */
+.app{display:grid;grid-template-columns:236px 1fr;min-height:100%}
+.lateral{
+  background:var(--papel);border-right:1px solid var(--regua);
+  padding:22px 16px;display:flex;flex-direction:column;gap:4px;
+}
+.logo{display:flex;align-items:center;padding:0 8px 22px;text-decoration:none}
+.logo img{display:block;width:auto}
+.menu{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:8px;
+  text-decoration:none;color:var(--tinta-2);font-weight:500;font-size:14.5px}
+.menu:hover{background:var(--painel);color:var(--tinta)}
+.menu[aria-current]{background:var(--painel);color:var(--tinta);font-weight:600}
+.menu svg{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7}
+.rodape-lateral{margin-top:auto;padding-top:16px;border-top:1px solid var(--regua)}
+.quem{display:flex;align-items:center;gap:9px;padding:8px;font-size:13px;color:var(--tinta-3)}
+.avatar{width:26px;height:26px;border-radius:7px;background:var(--acerola);color:#fff;
+  display:grid;place-items:center;font-family:'Outfit',sans-serif;font-weight:700;font-size:12px;flex:none}
+.sair{background:none;border:none;color:var(--tinta-3);font:inherit;font-size:13px;
+  cursor:pointer;padding:6px 8px;border-radius:6px}
+.sair:hover{background:var(--painel);color:var(--tinta)}
+
+/* Centralizado e um pouco mais largo: em 1920px o conteúdo ficava colado na
+   esquerda com 600px de vazio do lado direito, o que dá a impressão de tela
+   quebrada. `margin-inline:auto` resolve sem mexer em nenhuma grade. */
+.conteudo{padding:34px clamp(20px,3.4vw,52px) 96px;max-width:1240px;
+  margin-inline:auto;width:100%}
+.trilha{font-size:13px;color:var(--tinta-3);margin-bottom:6px}
+h1{font-size:29px;font-weight:700;margin:0 0 6px}
+.legenda-topo{color:var(--tinta-2);margin:0 0 28px;max-width:56ch}
+
+/* ───────────── botões ───────────── */
+.botao{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--acerola);color:#fff;border:1px solid transparent;
+  font:inherit;font-weight:600;font-size:14.5px;
+  padding:10px 18px;border-radius:8px;cursor:pointer;text-decoration:none;
+}
+.botao:hover{background:var(--acerola-escuro)}
+.botao:disabled{opacity:.45;cursor:not-allowed}
+.botao.calmo{background:var(--papel);color:var(--tinta);border-color:var(--regua)}
+.botao.calmo:hover{background:var(--painel)}
+.botao.mudo{background:none;border:none;color:var(--tinta-3);padding:8px 10px}
+.botao.mudo:hover{color:var(--tinta);background:var(--painel)}
+:focus-visible{outline:2px solid var(--acerola);outline-offset:2px}
+
+/* ───────────── cartões e listas ───────────── */
+.cartao{background:var(--papel);border:1px solid var(--regua);border-radius:var(--raio);
+  padding:20px;box-shadow:var(--sombra)}
+.grade{display:grid;gap:12px}
+.grade.dois{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.vazio{
+  border:1px dashed var(--regua);border-radius:var(--raio);padding:44px 28px;
+  text-align:center;color:var(--tinta-2);background:var(--papel);
+}
+.vazio h2{font-size:19px;margin:0 0 6px;color:var(--tinta)}
+.vazio p{margin:0 auto 20px;max-width:44ch}
+
+.selo{
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:'Outfit',sans-serif;font-weight:600;font-size:11px;
+  letter-spacing:.06em;text-transform:uppercase;
+  padding:3px 8px;border-radius:5px;background:var(--painel);color:var(--tinta-2);
+}
+.selo.viva{background:var(--acerola);color:#fff}
+.selo.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.selo.ruim{color:var(--acerola);background:color-mix(in srgb,var(--acerola) 12%,transparent)}
+.ponto{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.ponto.pulsa{animation:pulsa 1.4s ease-in-out infinite}
+@keyframes pulsa{0%,100%{opacity:1}50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.ponto.pulsa{animation:none}}
+
+/* ───────────── avisos ───────────── */
+.aviso{
+  display:flex;gap:11px;align-items:flex-start;
+  background:var(--painel);border-left:3px solid var(--acerola);
+  padding:14px 16px;border-radius:0 8px 8px 0;margin-bottom:24px;font-size:14px;
+}
+.aviso b{font-weight:600}
+.aviso p{margin:3px 0 0;color:var(--tinta-2)}
+
+/* ───────────── formulários ───────────── */
+/* O vão ENTRE campos (8px) é o dobro do vão entre o rótulo e a caixa dele
+   (4px). É essa diferença que faz o olho saber qual rótulo pertence a qual
+   caixa — se os dois fossem iguais, viraria uma lista solta. */
+label.campo{display:block;margin-bottom:8px}
+label.campo span{display:block;font-weight:600;font-size:13.5px;margin-bottom:4px}
+input[type=text],input[type=email],input[type=password],select{
+  width:100%;font:inherit;padding:10px 12px;border-radius:8px;
+  border:1px solid var(--regua);background:var(--papel);color:var(--tinta);
+}
+input:focus,select:focus{outline:2px solid var(--acerola);outline-offset:-1px;border-color:transparent}
+.erro{color:var(--acerola);font-size:14px;margin:0 0 14px;font-weight:500}
+
+/* ───────────── escolhas do wizard ───────────── */
+.passos{display:flex;gap:5px;margin-bottom:26px}
+.passos i{flex:1;height:3px;border-radius:2px;background:var(--painel-2)}
+.passos i.feito{background:var(--acerola)}
+
+.escolhas{display:grid;gap:9px}
+.escolhas.colunas{grid-template-columns:repeat(auto-fill,minmax(216px,1fr))}
+.escolha{
+  display:block;position:relative;cursor:pointer;
+  background:var(--papel);border:1px solid var(--regua);border-radius:var(--raio);
+  padding:15px 17px;transition:border-color .12s,background .12s;
+}
+.escolha:hover{background:var(--painel)}
+.escolha input[type=radio],
+.escolha input[type=checkbox]{position:absolute;opacity:0;width:0;height:0}
+.escolha:has(input:checked){border-color:var(--acerola);box-shadow:inset 0 0 0 1px var(--acerola)}
+.escolha:has(input:focus-visible){outline:2px solid var(--acerola);outline-offset:2px}
+.escolha h3{margin:0 0 3px;font-size:15.5px;font-weight:600;display:flex;
+  align-items:center;gap:8px;flex-wrap:wrap}
+.escolha p{margin:0;color:var(--tinta-2);font-size:13.5px;line-height:1.45}
+
+/* miniatura do estilo visual — o que a ClipShort não tem */
+.escolha.visual{padding:0;overflow:hidden}
+.escolha.visual .mini{aspect-ratio:9/14;background:var(--painel-2);display:block;
+  width:100%;object-fit:cover}
+.escolha.visual .semmini{
+  aspect-ratio:9/14;display:grid;place-items:center;text-align:center;
+  background:var(--painel-2);color:var(--tinta-3);font-size:12px;padding:14px;line-height:1.4;
+}
+.escolha.visual .rotulo{padding:11px 14px;font-weight:600;font-size:14.5px}
+
+/* prévia da legenda, desenhada em CSS com a fonte da marca */
+.previa-legenda{
+  aspect-ratio:16/9;border-radius:8px;background:#2A2A2E;display:grid;place-items:center;
+  margin-bottom:11px;
+}
+.previa-legenda b{font-family:'Outfit',sans-serif;font-weight:800;font-size:27px;color:#fff}
+
+.tocar{
+  width:30px;height:30px;border-radius:50%;flex:none;
+  border:1px solid var(--regua);background:var(--papel);color:var(--tinta-2);
+  display:grid;place-items:center;cursor:pointer;padding:0;
+}
+.tocar:hover{border-color:var(--acerola);color:var(--acerola)}
+.tocar svg{width:11px;height:11px;fill:currentColor}
+.linha-voz{display:flex;align-items:center;gap:12px}
+.linha-voz > div{flex:1;min-width:0}
+
+.desligado{opacity:.55}
+.desligado .escolha{cursor:not-allowed}
+
+.navegar{display:flex;justify-content:space-between;gap:12px;margin-top:30px;
+  padding-top:22px;border-top:1px solid var(--regua)}
+
+/* ───────────── pautas e vídeos ───────────── */
+.pauta{display:flex;gap:16px;align-items:flex-start;background:var(--papel);
+  border:1px solid var(--regua);border-radius:var(--raio);padding:17px 19px}
+.pauta > div{flex:1;min-width:0}
+.pauta h3{margin:0 0 4px;font-size:16px;font-weight:600}
+.pauta .gancho{margin:0;color:var(--tinta-2);font-size:14px;font-style:italic}
+.pauta .acoes{display:flex;gap:8px;align-items:center;flex:none}
+
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th{text-align:left;font-family:'Outfit',sans-serif;font-weight:600;font-size:11px;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3);
+  padding:0 12px 8px 0;border-bottom:1px solid var(--regua)}
+td{padding:13px 12px 13px 0;border-bottom:1px solid var(--regua);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.num{font-variant-numeric:tabular-nums}
+.rolagem{overflow-x:auto}
+
+/* ───────────── abas entrar / criar conta ─────────────
+   A pílula desliza entre os dois lados em vez de piscar: é a mesma peça se
+   movendo, então o olho acompanha para onde foi. */
+.abas{position:relative;display:flex;gap:2px;background:var(--painel);
+  padding:3px;border-radius:9px;margin-bottom:22px}
+.abas .pilula{
+  position:absolute;top:3px;left:3px;bottom:3px;width:calc(50% - 3px);
+  background:var(--papel);border-radius:7px;box-shadow:var(--sombra);
+  transition:transform .34s cubic-bezier(.32,.72,0,1);
+}
+.abas[data-aba="cadastrar"] .pilula{transform:translateX(100%)}
+.abas a{position:relative;z-index:1;flex:1;text-align:center;padding:8px;
+  border-radius:7px;text-decoration:none;font-weight:600;font-size:14px;
+  color:var(--tinta-3);transition:color .2s}
+.abas a[aria-current]{color:var(--tinta)}
+
+/* Campo que só existe no cadastro. O truque do `grid-template-rows` de 0fr
+   para 1fr anima a abertura sem ninguém precisar saber a altura — e o
+   cartão cresce junto porque o conteúdo cresceu de verdade. Nada salta:
+   o que já estava na tela só desce. */
+.extra{display:grid;grid-template-rows:0fr;
+  transition:grid-template-rows .42s cubic-bezier(.4,0,.2,1),
+             opacity .3s ease .06s}
+.extra > div{overflow:hidden;min-height:0}
+.extra:not(.mostrando){opacity:0}
+.extra.mostrando{grid-template-rows:1fr;opacity:1}
+
+.so-entrar{display:grid;grid-template-rows:1fr;
+  transition:grid-template-rows .42s cubic-bezier(.4,0,.2,1), opacity .2s ease}
+.so-entrar.escondido{grid-template-rows:0fr;opacity:0;pointer-events:none}
+.so-entrar > *{overflow:hidden;min-height:0}
+
+.elo{background:none;border:none;padding:4px 0 14px;font:inherit;font-size:13px;
+  color:var(--tinta-3);cursor:pointer;text-decoration:underline;
+  text-underline-offset:3px}
+.elo:hover{color:var(--acerola)}
+
+/* botão do Google: neutro de propósito, para o vermelho da marca continuar
+   sendo o único botão que manda na tela */
+.botao.google{
+  width:100%;background:var(--papel);color:var(--tinta);border-color:var(--regua);
+  gap:10px;font-weight:600;
+}
+.botao.google:hover{background:var(--painel)}
+.botao.google svg{width:18px;height:18px;flex:none}
+
+.ou{display:flex;align-items:center;gap:12px;margin:16px 0;
+  color:var(--tinta-3);font-size:12px;text-transform:uppercase;letter-spacing:.1em}
+.ou::before,.ou::after{content:"";flex:1;height:1px;background:var(--regua)}
+
+.recado{color:var(--ok);font-size:14px;margin:0 0 14px;font-weight:500}
+
+@media (prefers-reduced-motion:reduce){
+  .abas .pilula,.extra,.so-entrar{transition:none}
+}
+
+/* ───────────── porta de entrada ─────────────
+   Tela dividida: à esquerda a forma, à direita o produto. A entrada dos
+   concorrentes é um formulário no vazio; a primeira coisa que a pessoa vê
+   aqui é o que ela vai receber. */
+.portao{min-height:100%;display:grid;grid-template-columns:1fr}
+/* Alinhado ao topo, não centralizado: assim o cartão cresce SÓ para baixo
+   quando o cadastro abre os campos a mais. Centralizado, ele cresceria para
+   os dois lados e o logotipo subiria junto — o que parece tremida. */
+.lado-forma{
+  display:grid;justify-items:center;align-content:start;
+  padding:clamp(40px,11vh,116px) 24px 56px;background:var(--fundo);
+}
+.lado-forma .caixa{width:100%;max-width:396px}
+.lado-forma .logo{justify-content:center;padding-bottom:28px}
+
+.mural{display:none}
+
+@media (min-width:940px){
+  .portao{grid-template-columns:minmax(430px,44%) 1fr}
+  .mural{
+    display:block;position:relative;overflow:hidden;background:var(--acerola);
+  }
+  .mural .fileiras{
+    position:absolute;inset:-8% -4%;
+    display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+    transform:rotate(-7deg) scale(1.22);
+  }
+  .mural .fileira{display:grid;gap:14px;align-content:start;will-change:transform}
+  .mural img{
+    width:100%;aspect-ratio:9/12.5;object-fit:cover;border-radius:12px;display:block;
+    box-shadow:0 12px 30px rgba(0,0,0,.24);
+  }
+  /* metade do conteúdo é cópia, então -50% volta exatamente ao começo */
+  .mural .sobe {animation:sobe 46s linear infinite}
+  .mural .desce{animation:sobe 52s linear infinite reverse}
+  @keyframes sobe{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+
+  /* véu vermelho por cima: o mural é textura, o texto é que se lê */
+  .mural .veu{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    justify-content:flex-end;padding:52px;color:#fff;
+    background:linear-gradient(200deg,
+      color-mix(in srgb,var(--acerola) 62%,transparent) 0%,
+      color-mix(in srgb,var(--acerola) 88%,transparent) 52%,
+      var(--acerola) 100%);
+  }
+  .mural .frase{
+    font-family:'Outfit',sans-serif;font-weight:800;font-size:37px;line-height:1.08;
+    letter-spacing:-.03em;margin:0;text-wrap:balance;
+  }
+  .mural .prova{
+    margin:16px 0 0;font-size:15px;opacity:.9;
+    padding-top:16px;border-top:1px solid rgba(255,255,255,.28);
+  }
+}
+@media (prefers-reduced-motion:reduce){
+  .mural .sobe,.mural .desce{animation:none}
+}
+
+.barra-topo{display:none}
+
+/* ───────── celular: barra de navegação embaixo ─────────
+   Polegar alcança o rodapé, não o topo. A marca sobe para um cabeçalho
+   próprio e os três destinos viram ícone com legenda, como aplicativo. */
+@media (max-width:840px){
+  .app{grid-template-columns:1fr;padding-top:54px}
+  .so-desktop{display:none !important}
+
+  .barra-topo{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    position:fixed;top:0;left:0;right:0;z-index:20;height:54px;padding:0 16px;
+    background:var(--papel);border-bottom:1px solid var(--regua);
+  }
+  .barra-topo .logo{padding:0}
+  .barra-topo .sair{font-size:13px}
+
+  .lateral{
+    position:fixed;left:0;right:0;bottom:0;z-index:20;
+    flex-direction:row;align-items:stretch;gap:0;padding:0;
+    border-right:none;border-top:1px solid var(--regua);
+    padding-bottom:env(safe-area-inset-bottom);   /* faixa do iPhone */
+  }
+  .menu{
+    flex:1;flex-direction:column;gap:4px;justify-content:center;
+    padding:9px 4px 8px;border-radius:0;font-size:11px;font-weight:600;
+    letter-spacing:.01em;
+  }
+  .menu:hover{background:none}
+  .menu svg{width:21px;height:21px}
+  /* a seleção é uma barra no topo do item, não um bloco cinza atrás */
+  .menu[aria-current]{background:none;color:var(--acerola);position:relative}
+  .menu[aria-current]::before{
+    content:"";position:absolute;top:0;left:22%;right:22%;height:2.5px;
+    border-radius:0 0 3px 3px;background:var(--acerola);
+  }
+
+  /* o conteúdo não pode terminar embaixo da barra */
+  .conteudo{padding:22px 18px calc(96px + env(safe-area-inset-bottom))}
+  h1{font-size:23px}
+}
+
+/* ═══════════ grade de vídeo ═══════════
+   A tela da série é uma prateleira de vídeo, não uma planilha. Tudo aqui
+   existe para o formato 9:16 aparecer como formato, não como linha. */
+
+.prateleira{
+  display:grid;gap:14px;
+  grid-template-columns:repeat(auto-fill,minmax(178px,1fr));
+}
+
+.fita{
+  position:relative;display:block;text-decoration:none;
+  background:var(--painel-2);border-radius:12px;overflow:hidden;
+  aspect-ratio:9/16;border:1px solid var(--regua);
+}
+.fita img,.fita video{width:100%;height:100%;object-fit:cover;display:block}
+.fita .capa{transition:transform .35s ease}
+.fita:hover .capa{transform:scale(1.04)}
+@media (prefers-reduced-motion:reduce){.fita .capa{transition:none}
+  .fita:hover .capa{transform:none}}
+
+/* véu escuro só na base, para o texto branco ter onde pousar */
+.fita .pe{
+  position:absolute;inset:auto 0 0 0;padding:34px 12px 11px;
+  background:linear-gradient(transparent,rgba(0,0,0,.82));
+  color:#fff;
+}
+.fita .pe b{display:block;font-family:'Outfit',sans-serif;font-weight:600;
+  font-size:13.5px;line-height:1.3;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.fita .pe small{display:block;margin-top:4px;font-size:11.5px;opacity:.72;
+  font-variant-numeric:tabular-nums}
+
+.fita .play{
+  position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;
+}
+.fita .play i{
+  width:46px;height:46px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(0,0,0,.42);backdrop-filter:blur(3px);
+  border:1.5px solid rgba(255,255,255,.55);
+  transition:background .18s,transform .18s;
+}
+.fita:hover .play i{background:var(--acerola);border-color:transparent;transform:scale(1.08)}
+.fita .play svg{width:14px;height:14px;fill:#fff;margin-left:2px}
+
+.fita .marca-canto{position:absolute;top:9px;left:9px;z-index:2}
+
+/* cartão de vídeo que ainda está sendo feito */
+.fita.fazendo{
+  background:var(--painel);display:grid;place-items:center;text-align:center;
+  padding:18px;border-style:dashed;
+}
+.fita.falhou{background:var(--painel);display:grid;place-items:start center;
+  text-align:center;padding:20px 16px;border-style:dashed}
+.fita.falhou p{color:var(--acerola);font-size:12.5px;line-height:1.45;margin:10px 0 0}
+
+/* etapas da produção, em pé, uma embaixo da outra */
+.etapas{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:7px;width:100%}
+.etapas li{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tinta-3);
+  text-align:left}
+.etapas li i{width:7px;height:7px;border-radius:50%;background:var(--painel-2);flex:none}
+.etapas li.feita{color:var(--tinta-2)}
+.etapas li.feita i{background:var(--ok)}
+.etapas li.agora{color:var(--acerola);font-weight:600}
+.etapas li.agora i{background:var(--acerola);animation:pulsa 1.4s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.etapas li.agora i{animation:none}}
+
+/* ═══════════ pauta como cartaz ═══════════ */
+.pautas{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(292px,1fr))}
+.cartaz{
+  background:var(--papel);border:1px solid var(--regua);border-radius:12px;
+  padding:20px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--sombra);
+}
+.cartaz .aspas{
+  font-family:'Outfit',sans-serif;font-weight:800;font-size:34px;line-height:.6;
+  color:var(--acerola);opacity:.28;height:16px;
+}
+.cartaz h3{margin:0;font-size:16.5px;font-weight:600;line-height:1.32}
+.cartaz .gancho{margin:0;color:var(--tinta-2);font-size:14px;line-height:1.5;flex:1}
+.cartaz .pe{display:flex;gap:8px;align-items:center;justify-content:space-between;
+  padding-top:12px;border-top:1px solid var(--regua)}
+
+/* ═══════════ capa da série na listagem ═══════════ */
+.serie-cartao{
+  display:flex;flex-direction:column;background:var(--papel);
+  border:1px solid var(--regua);border-radius:12px;overflow:hidden;
+  text-decoration:none;box-shadow:var(--sombra);
+}
+.serie-cartao .capa-serie{
+  aspect-ratio:16/9;position:relative;overflow:hidden;background:var(--painel-2);
+  display:grid;grid-template-columns:repeat(3,1fr);gap:2px;
+}
+.serie-cartao .capa-serie img{width:100%;height:100%;object-fit:cover;display:block}
+.serie-cartao .capa-serie .oco{
+  grid-column:1/-1;display:grid;place-items:center;gap:6px;
+  color:var(--tinta-3);font-size:12.5px;
+  background:linear-gradient(150deg,var(--painel),var(--painel-2));
+}
+.serie-cartao .capa-serie .oco img{width:30px;height:30px;opacity:.28;object-fit:contain}
+/* A linha de detalhes ganha duas linhas fixas: com uma ou duas conforme o
+   nome do estilo, os cards da mesma fileira saíam com alturas diferentes. */
+.serie-cartao .miolo{padding:16px 18px 18px;display:flex;flex-direction:column;flex:1}
+.serie-cartao .detalhe{
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;min-height:2.9em;
+}
+.serie-cartao .selos{margin-top:auto}
+
+/* ═══════════ tocador ═══════════ */
+dialog.tocador{
+  border:none;padding:0;background:transparent;max-width:min(94vw,420px);width:100%;
+}
+dialog.tocador::backdrop{background:rgba(10,10,12,.82)}
+dialog.tocador video{width:100%;border-radius:14px;display:block;background:#000}
+dialog.tocador .barra{display:flex;gap:10px;justify-content:space-between;
+  align-items:center;margin-top:12px}
+dialog.tocador .titulo{color:#fff;font-family:'Outfit',sans-serif;font-weight:600;
+  font-size:15px;flex:1;min-width:0}
+
+/* ───────────── detalhes do formulário de entrada ───────────── */
+
+.com-olho{position:relative;display:block}
+.com-olho input{padding-right:44px}
+.olho{
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  width:32px;height:32px;display:grid;place-items:center;padding:0;
+  background:none;border:none;border-radius:7px;cursor:pointer;color:var(--tinta-3);
+}
+.olho:hover{color:var(--tinta);background:var(--painel)}
+.olho svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}
+
+.dica{display:block;margin-top:4px;color:var(--tinta-3);font-size:12.5px;font-weight:400}
+.dica.bilhete{color:var(--acerola);font-weight:500}
+.dica.caps{color:var(--alerta);font-weight:500}
+input[aria-invalid]{border-color:var(--acerola)}
+input[aria-invalid]:focus{outline-color:var(--acerola)}
+
+/* botão que mostra que está indo: sem isso a pessoa clica de novo achando
+   que não pegou, porque conferir a senha leva alguns instantes */
+.botao.carrega{position:relative}
+.botao.carrega .roda{
+  position:absolute;width:16px;height:16px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.35);border-top-color:#fff;
+  opacity:0;animation:gira .7s linear infinite;
+}
+.botao.carrega.indo .rotulo{opacity:0}
+.botao.carrega.indo .roda{opacity:1}
+.botao.carrega:disabled{opacity:1;cursor:progress}
+@keyframes gira{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.botao.carrega .roda{animation-duration:2s}}
+
+.miudo{margin:18px 0 0;text-align:center;color:var(--tinta-3);
+  font-size:12.5px;line-height:1.5}
+.erro{color:var(--acerola);font-size:14px;margin:0 0 14px;font-weight:500}
+
+/* ───────────── caixa de aceite ───────────── */
+/* A caixa nativa não aceita estilo direito, então ela fica invisível e quem
+   se pinta é o quadradinho ao lado — que continua ligado a ela por estar
+   dentro do mesmo <label>. */
+.aceite{display:flex;gap:10px;align-items:flex-start;cursor:pointer;
+  padding:6px 0 14px;font-size:13.5px;line-height:1.5;color:var(--tinta-2)}
+.aceite input{position:absolute;opacity:0;width:0;height:0}
+.aceite .marca{
+  flex:none;width:19px;height:19px;margin-top:1px;border-radius:5px;
+  border:1.5px solid var(--regua-forte,var(--regua));background:var(--papel);
+  display:grid;place-items:center;transition:background .15s,border-color .15s;
+}
+.aceite .marca svg{width:12px;height:12px;fill:none;stroke:#fff;stroke-width:2.4;
+  stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:16;stroke-dashoffset:16;transition:stroke-dashoffset .22s ease}
+.aceite:hover .marca{border-color:var(--acerola)}
+.aceite:has(input:checked) .marca{background:var(--acerola);border-color:var(--acerola)}
+.aceite:has(input:checked) .marca svg{stroke-dashoffset:0}
+.aceite:has(input:focus-visible) .marca{outline:2px solid var(--acerola);outline-offset:2px}
+.aceite a{color:var(--tinta);text-decoration:underline;text-underline-offset:2px}
+.aceite a:hover{color:var(--acerola)}
+/* quem esqueceu de marcar vê a caixa vermelha, não um texto solto embaixo */
+.aceite.faltando .marca{border-color:var(--acerola);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--acerola) 16%,transparent)}
+.aceite.faltando .texto{color:var(--acerola)}
+@media (prefers-reduced-motion:reduce){.aceite .marca,.aceite .marca svg{transition:none}}
+
+/* ───────────── documento (termos, privacidade) ───────────── */
+.documento{
+  max-width:680px;margin:0 auto;padding:56px 24px 96px;
+  font-size:16px;line-height:1.68;color:var(--tinta-2);
+}
+.documento .logo{padding:0 0 34px}
+.documento h1{font-size:32px;color:var(--tinta);margin:0 0 8px}
+.documento .resumo{font-size:18px;color:var(--tinta);margin:0 0 6px;max-width:38em}
+.documento .data{font-size:13.5px;color:var(--tinta-3);margin:0 0 30px}
+.documento section{margin-top:34px}
+.documento h2{
+  font-size:13px;letter-spacing:.13em;text-transform:uppercase;color:var(--tinta);
+  margin:0 0 12px;padding-bottom:9px;border-bottom:1px solid var(--regua);
+}
+.documento p{margin:0 0 14px}
+.documento .pe{margin-top:48px;padding-top:20px;border-top:1px solid var(--regua);
+  font-size:14.5px}
+.documento .pe a{color:var(--tinta);text-decoration:underline;text-underline-offset:3px}
+.documento .pe a:hover{color:var(--acerola)}
+.miudo a{color:var(--tinta-2);text-decoration:underline;text-underline-offset:2px}
+.miudo a:hover{color:var(--acerola)}
+
+/* ───────────── planos ─────────────
+   Quatro degraus de uma escada, não quatro cartões iguais. A barrinha
+   preenchida dá o volume antes de a pessoa ler qualquer número, e o degrau
+   escolhido inverte para vermelho — vira o único ponto forte da tela. */
+
+.topo-planos{display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap;
+  margin-bottom:26px}
+.topo-planos > div:first-child{flex:1;min-width:280px}
+.topo-planos .legenda-topo{margin-bottom:0}
+
+.ciclo{display:inline-flex;gap:2px;background:var(--painel);padding:3px;
+  border-radius:9px;flex:none}
+.ciclo label{position:relative;cursor:pointer}
+.ciclo input{position:absolute;opacity:0;width:0;height:0}
+.ciclo span{display:block;padding:8px 16px;border-radius:7px;font-weight:600;
+  font-size:14px;color:var(--tinta-3);white-space:nowrap}
+.ciclo label:has(input:checked) span{background:var(--papel);color:var(--tinta);
+  box-shadow:var(--sombra)}
+.ciclo label:has(input:focus-visible) span{outline:2px solid var(--acerola);outline-offset:2px}
+.ciclo i{font-style:normal;color:var(--acerola);font-size:12px;margin-left:6px;font-weight:700}
+
+.escada{display:grid;gap:12px;align-items:stretch;
+  grid-template-columns:repeat(auto-fit,minmax(206px,1fr))}
+
+.degrau{
+  position:relative;display:flex;flex-direction:column;gap:0;cursor:pointer;
+  background:var(--papel);border:1px solid var(--regua);border-radius:14px;
+  padding:20px;overflow:hidden;
+  transition:border-color .15s,background .15s,color .15s;
+}
+.degrau input{position:absolute;opacity:0;width:0;height:0}
+.degrau:hover{border-color:var(--tinta-3)}
+.degrau:has(input:focus-visible){outline:2px solid var(--acerola);outline-offset:3px}
+
+/* nowrap: o selo do Ultra quebrava em duas linhas e desalinhava o cartão
+   inteiro em relação aos vizinhos */
+.degrau .cabeca{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;
+  min-height:22px;margin-bottom:14px;padding-right:26px}
+.degrau .etiqueta{font-family:'Outfit',sans-serif;font-weight:700;font-size:11px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--tinta-3)}
+.degrau .destaque-plano{font-style:normal;background:var(--acerola);color:#fff;
+  font-family:'Outfit',sans-serif;font-weight:700;font-size:9.5px;letter-spacing:.07em;
+  text-transform:uppercase;padding:3px 7px;border-radius:5px;white-space:nowrap}
+
+/* O herói do cartão é quanto a pessoa RECEBE. O preço vem depois. */
+.degrau .quanto{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;
+  margin-bottom:2px}
+.degrau .quanto b{font-family:'Outfit',sans-serif;font-weight:800;font-size:38px;
+  line-height:1;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.degrau .quanto small{font-family:'Outfit',sans-serif;font-weight:600;font-size:13px;
+  color:var(--tinta-2)}
+.degrau .ritmo{color:var(--tinta-3);font-size:13px;margin-bottom:16px}
+
+.degrau .barras{display:flex;gap:3px;margin-bottom:6px}
+.degrau .barras i{flex:1;height:4px;border-radius:2px;background:var(--painel-2)}
+.degrau .barras i.cheia{background:var(--acerola)}
+
+/* Sem régua aqui: as barrinhas logo acima já são uma linha horizontal, e
+   duas seguidas viravam um traço duplo. O espaço separa o suficiente. */
+.degrau .preco{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;
+  margin-top:auto;padding-top:16px}
+.degrau .preco b{font-family:'Outfit',sans-serif;font-weight:700;font-size:19px;
+  line-height:1.15;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.degrau .preco small{color:var(--tinta-3);font-size:12px}
+
+.degrau .conta{margin-top:5px;color:var(--tinta-3);font-size:12.5px;
+  font-variant-numeric:tabular-nums}
+.degrau .conta b{font-weight:700;color:var(--tinta-2)}
+
+.degrau .marca-escolha{position:absolute;top:16px;right:16px;width:20px;height:20px;
+  border-radius:50%;border:1.5px solid var(--regua);display:grid;place-items:center}
+.degrau .marca-escolha svg{width:11px;height:11px;fill:none;stroke:#fff;stroke-width:2.6;
+  stroke-linecap:round;stroke-linejoin:round;opacity:0;transition:opacity .15s}
+
+/* o escolhido inverte: vira o bloco vermelho da tela */
+.degrau.eleito{background:var(--acerola);border-color:var(--acerola);color:#fff}
+.degrau.eleito .etiqueta{color:rgba(255,255,255,.7)}
+.degrau.eleito .destaque-plano{background:#fff;color:var(--acerola)}
+.degrau.eleito .barras i{background:rgba(255,255,255,.22)}
+.degrau.eleito .barras i.cheia{background:#fff}
+.degrau.eleito .preco small{color:rgba(255,255,255,.78)}
+.degrau.eleito .conta{color:rgba(255,255,255,.75)}
+.degrau.eleito .conta b{color:rgba(255,255,255,.95)}
+.degrau.eleito .ritmo{color:rgba(255,255,255,.75)}
+.degrau.eleito .quanto small{color:rgba(255,255,255,.85)}
+
+.degrau.eleito .marca-escolha{border-color:#fff;background:#fff}
+.degrau.eleito .marca-escolha svg{opacity:1;stroke:var(--acerola)}
+
+/* barra de fechamento */
+.fechamento{display:flex;align-items:center;gap:24px;flex-wrap:wrap;
+  margin-top:14px;padding:18px 22px;background:var(--papel);
+  border:1px solid var(--regua);border-radius:14px}
+.quantas{display:flex;align-items:center;gap:14px}
+.quantas .titulo{font-weight:600;font-size:14px;white-space:nowrap}
+.quantas small{color:var(--tinta-3);font-size:12.5px;white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+.contador{display:inline-flex;align-items:center;border:1px solid var(--regua);
+  border-radius:9px;overflow:hidden;background:var(--papel);flex:none}
+.contador button{width:36px;height:40px;border:none;background:none;cursor:pointer;
+  font-size:18px;color:var(--tinta-2);font-family:'Outfit',sans-serif;line-height:1}
+.contador button:hover{background:var(--painel);color:var(--acerola)}
+.contador input{width:50px;border:none;text-align:center;font:inherit;font-weight:700;
+  font-variant-numeric:tabular-nums;background:none;padding:10px 0}
+.contador input:focus{outline:none}
+.contador input::-webkit-outer-spin-button,
+.contador input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+/* O valor nunca quebra: "R$" numa linha e "52,42" na outra fica horrível, e
+   é exatamente o que acontece quando falta largura. `nowrap` no número e na
+   etiqueta; a nota do anual é que ganha a linha inteira embaixo. */
+.total{margin-left:auto;text-align:right;line-height:1.15;min-width:0}
+.total span{display:block;color:var(--tinta-3);font-size:11px;text-transform:uppercase;
+  letter-spacing:.09em;font-family:'Outfit',sans-serif;font-weight:600;margin-bottom:3px;
+  white-space:nowrap}
+.total b{display:block;font-family:'Outfit',sans-serif;font-weight:800;font-size:26px;
+  letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--tinta);
+  white-space:nowrap}
+.total small{display:block;color:var(--tinta-3);font-size:12.5px;white-space:nowrap}
+.fechamento .botao{flex:none;padding:12px 30px}
+
+.teste{margin:12px 2px 0;color:var(--tinta-3);font-size:12.5px}
+.teste code{color:var(--tinta-2)}
+
+.titulo-secao{font-size:13px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--tinta-3);margin:46px 0 16px;font-family:'Outfit',sans-serif;font-weight:700}
+.incluso{list-style:none;padding:0;margin:0;display:grid;gap:10px;
+  grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.incluso li{display:flex;gap:10px;align-items:flex-start;color:var(--tinta-2);
+  font-size:14.5px;line-height:1.45}
+.incluso svg{width:15px;height:15px;flex:none;margin-top:4px;fill:none;
+  stroke:var(--acerola);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+
+@media (max-width:680px){
+  .fechamento{flex-direction:column;align-items:stretch;gap:16px}
+  .quantas{justify-content:space-between}
+  .quantas small{display:none}
+
+  /* etiqueta e valor lado a lado numa linha; a nota do anual ocupa a linha
+     inteira embaixo, onde cabe sem quebrar no meio de um número */
+  .total{margin-left:0;text-align:left;
+    display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:2px 10px}
+  .total span{grid-column:1;margin:0}
+  .total b{grid-column:2;justify-self:start}
+  .total small{grid-column:1/-1;margin-top:2px;white-space:normal}
+
+  .fechamento .botao{width:100%}
+}
+
+/* Card de falha: o conteúdo fica centrado em vez de deixar um buraco no meio,
+   e o texto do erro respira igual ao dos outros cards. */
+.fita.falhou{align-content:center;justify-items:center;gap:10px;
+  place-items:center;text-align:center}
+.fita.falhou p{margin:0}
+.fita.falhou form{margin:0}
+.fita.falhou small{color:var(--tinta-3);font-size:12px}
+
+/* ───────────── assinatura ativa ─────────────
+   Tela de conferência, não de compra. Um cartão com o que a pessoa tem, e
+   uma porta só para mexer nisso. */
+.assinatura{display:grid;gap:12px;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);
+  align-items:stretch}
+.cartao-assinatura{background:var(--papel);border:1px solid var(--regua);
+  border-radius:14px;padding:24px;box-shadow:var(--sombra)}
+.cartao-assinatura .etiqueta{font-family:'Outfit',sans-serif;font-weight:700;
+  font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--acerola)}
+.cartao-assinatura h2{margin:6px 0 2px;font-size:26px;font-weight:800;
+  letter-spacing:-.025em}
+.cartao-assinatura .ritmo{margin:0 0 20px;color:var(--tinta-2);font-size:14.5px}
+
+.cobertura{display:grid;gap:2px;margin:0 0 22px;
+  grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+.cobertura > div{background:var(--painel);border-radius:10px;padding:14px 16px}
+.cobertura dt{font-family:'Outfit',sans-serif;font-weight:600;font-size:10.5px;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--tinta-3);margin-bottom:5px}
+.cobertura dd{margin:0;font-family:'Outfit',sans-serif;font-weight:800;font-size:22px;
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.cobertura dd.boa{color:var(--ok);font-size:15px;font-weight:700}
+.cobertura dd.ruim{color:var(--acerola);font-size:15px;font-weight:700}
+
+.cartao-assinatura .acoes{display:flex;flex-direction:column;gap:10px;
+  align-items:flex-start}
+.cartao-assinatura .nota{color:var(--tinta-3);font-size:13px;line-height:1.5;
+  max-width:46ch}
+
+.somar{display:flex;flex-direction:column;justify-content:center;gap:8px;
+  background:var(--painel);border:1px dashed var(--regua-forte,var(--regua));
+  border-radius:14px;padding:24px;text-decoration:none}
+.somar b{font-family:'Outfit',sans-serif;font-weight:700;font-size:16px}
+.somar span{color:var(--tinta-2);font-size:13.5px;line-height:1.5}
+
+@media (max-width:760px){
+  .assinatura{grid-template-columns:1fr}
+}

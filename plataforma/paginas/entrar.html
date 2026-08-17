@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block titulo %}Entrar · ACEROLAB{% endblock %}
+{% set cadastro = aba == 'cadastrar' %}
+
+{% macro olho() %}
+<button type="button" class="olho" aria-label="Mostrar senha" aria-pressed="false">
+  <svg viewBox="0 0 24 24" class="aberto"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+  <svg viewBox="0 0 24 24" class="fechado" hidden><path d="M2 12s3.6-6.5 10-6.5c1.7 0 3.2.5 4.5 1.1M22 12s-3.6 6.5-10 6.5c-1.7 0-3.2-.5-4.5-1.1"/><path d="M4 4l16 16"/></svg>
+</button>
+{% endmacro %}
+
+{% block porta %}
+<div class="abas" id="abas" data-aba="{{ aba }}">
+  <span class="pilula" aria-hidden="true"></span>
+  <a href="/entrar" data-vai="entrar" {% if not cadastro %}aria-current="page"{% endif %}>Entrar</a>
+  <a href="/entrar?aba=cadastrar" data-vai="cadastrar" {% if cadastro %}aria-current="page"{% endif %}>Criar conta</a>
+</div>
+
+{% if erro %}<p class="erro" role="alert">{{ erro }}</p>{% endif %}
+{% if recado %}<p class="recado" role="status">{{ recado }}</p>{% endif %}
+
+<div class="cartao">
+  {# O botão fica sempre na tela. Sem as chaves do Supabase, clicar cai
+     num recado explicando — melhor do que a tela mudar de forma quando
+     a configuração chegar. #}
+  <a class="botao google" href="/entrar/google">
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path fill="#4285F4" d="M45.1 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h11.8c-.5 2.7-2 5-4.4 6.6v5.5h7.1c4.1-3.8 6.6-9.4 6.6-16.1z"/>
+      <path fill="#34A853" d="M24 46c5.9 0 10.9-2 14.5-5.4l-7.1-5.5c-2 1.3-4.5 2.1-7.4 2.1-5.7 0-10.5-3.8-12.2-9h-7.3v5.7C8.1 41.1 15.5 46 24 46z"/>
+      <path fill="#FBBC05" d="M11.8 28.2c-.4-1.3-.7-2.7-.7-4.2s.3-2.9.7-4.2v-5.7H4.5C3 17.1 2.1 20.4 2.1 24s.9 6.9 2.4 9.9l7.3-5.7z"/>
+      <path fill="#EA4335" d="M24 10.8c3.2 0 6.1 1.1 8.4 3.3l6.3-6.3C34.9 4.2 29.9 2 24 2 15.5 2 8.1 6.9 4.5 14.1l7.3 5.7c1.7-5.2 6.5-9 12.2-9z"/>
+    </svg>
+    Continuar com o Google
+  </a>
+  <div class="ou"><span>ou</span></div>
+
+  {# Um formulário só. Os campos comuns não saem do lugar: os do cadastro
+     é que se abrem e empurram o resto para baixo. Sem JavaScript, o
+     servidor já entrega o formulário certo pela aba. #}
+  <form id="forma" method="post" novalidate
+        action="{{ '/cadastrar' if cadastro else '/entrar' }}">
+
+    <div class="extra {{ 'mostrando' if cadastro }}" data-extra>
+      <div>
+        <label class="campo"><span>Seu nome</span>
+          <input type="text" name="nome" value="{{ nome or '' }}" autocomplete="name"></label>
+      </div>
+    </div>
+
+    <label class="campo"><span>E-mail</span>
+      <input type="email" name="email" value="{{ email or '' }}" required
+             autocomplete="email" data-email></label>
+
+    <label class="campo"><span>Senha</span>
+      <span class="com-olho">
+        <input type="password" name="senha" required data-senha
+               autocomplete="{{ 'new-password' if cadastro else 'current-password' }}">
+        {{ olho() }}
+      </span>
+      <small class="dica caps" hidden>Caps Lock está ligado.</small>
+    </label>
+
+    <div class="extra {{ 'mostrando' if cadastro }}" data-extra>
+      <div>
+        <label class="campo"><span>Confirme a senha</span>
+          <span class="com-olho">
+            <input type="password" name="confirmacao" autocomplete="new-password"
+                   data-confirmacao {% if cadastro %}required{% endif %}>
+            {{ olho() }}
+          </span>
+          <small class="dica">Pelo menos 8 caracteres.</small>
+        </label>
+      </div>
+    </div>
+
+    <div class="extra {{ 'mostrando' if cadastro }}" data-extra>
+      <div>
+        <label class="aceite">
+          <input type="checkbox" name="aceite" value="sim" data-aceite
+                 {% if cadastro %}required{% endif %}>
+          <span class="marca" aria-hidden="true">
+            <svg viewBox="0 0 16 16"><path d="M3 8.4l3.2 3.2L13 4.8"/></svg>
+          </span>
+          <span class="texto">Li e aceito os
+            <a href="/termos" target="_blank" rel="noopener">termos de uso</a> e a
+            <a href="/privacidade" target="_blank" rel="noopener">política de privacidade</a>.</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="so-entrar {{ 'escondido' if cadastro }}" data-so-entrar>
+      <button type="button" class="elo" id="esqueci">Esqueci minha senha</button>
+    </div>
+
+    <button class="botao carrega" type="submit" style="width:100%">
+      <span class="rotulo">{{ 'Criar conta' if cadastro else 'Entrar' }}</span>
+      <span class="roda" aria-hidden="true"></span>
+    </button>
+  </form>
+</div>
+
+<form method="post" action="/esqueci" id="forma-esqueci" hidden>
+  <input type="hidden" name="email">
+</form>
+
+<p class="miudo">
+  <a href="/termos" target="_blank" rel="noopener">Termos de uso</a> ·
+  <a href="/privacidade" target="_blank" rel="noopener">Política de privacidade</a>
+</p>
+{% endblock %}
+
+{% block roda_pe %}
+<script>
+(() => {
+  const abas  = document.getElementById('abas');
+  const forma = document.getElementById('forma');
+  if (!abas || !forma) return;
+
+  const extras   = [...forma.querySelectorAll('[data-extra]')];
+  const soEntrar = forma.querySelector('[data-so-entrar]');
+  const rotulo   = forma.querySelector('.rotulo');
+  const senha    = forma.querySelector('[data-senha]');
+  const confirma = forma.querySelector('[data-confirmacao]');
+  const aceite   = forma.querySelector('[data-aceite]');
+
+  function aplicar(qual, comHistorico = true) {
+    if (abas.dataset.aba === qual) return;
+    const criando = qual === 'cadastrar';
+
+    abas.dataset.aba = qual;
+    abas.querySelectorAll('a').forEach(a =>
+      a.toggleAttribute('aria-current', a.dataset.vai === qual));
+
+    // Os campos extras abrem e empurram o resto para baixo. Quem já estava
+    // na tela não pisca nem troca de lugar de um quadro para o outro.
+    extras.forEach(e => e.classList.toggle('mostrando', criando));
+    soEntrar.classList.toggle('escondido', criando);
+
+    forma.action = criando ? '/cadastrar' : '/entrar';
+    rotulo.textContent = criando ? 'Criar conta' : 'Entrar';
+    senha.autocomplete = criando ? 'new-password' : 'current-password';
+    confirma.toggleAttribute('required', criando);
+    aceite.toggleAttribute('required', criando);
+    if (!criando) { confirma.value = ''; limpar(confirma); }
+
+    if (comHistorico) {
+      history.pushState({aba: qual}, '',
+        criando ? '/entrar?aba=cadastrar' : '/entrar');
+    }
+  }
+
+  abas.addEventListener('click', e => {
+    const link = e.target.closest('[data-vai]');
+    if (!link) return;
+    e.preventDefault();
+    aplicar(link.dataset.vai);
+  });
+
+  addEventListener('popstate', () => aplicar(
+    new URLSearchParams(location.search).get('aba') === 'cadastrar'
+      ? 'cadastrar' : 'entrar', false));
+
+  // ── ver a senha ──────────────────────────────────────────────
+  // Errar a senha por não enxergar o que digitou é o motivo mais bobo de
+  // não entrar num produto.
+  document.addEventListener('click', e => {
+    const olho = e.target.closest('.olho');
+    if (!olho) return;
+    const campo = olho.parentElement.querySelector('input');
+    const vendo = campo.type === 'text';
+    campo.type = vendo ? 'password' : 'text';
+    olho.setAttribute('aria-pressed', String(!vendo));
+    olho.setAttribute('aria-label', vendo ? 'Mostrar senha' : 'Esconder senha');
+    olho.querySelector('.aberto').hidden = !vendo;
+    olho.querySelector('.fechado').hidden = vendo;
+    campo.focus();
+    const n = campo.value.length;      // cursor no fim, senão pula pro começo
+    campo.setSelectionRange(n, n);
+  });
+
+  // ── Caps Lock ────────────────────────────────────────────────
+  const aviso = forma.querySelector('.caps');
+  const olhar = e => {
+    if (typeof e.getModifierState !== 'function') return;
+    aviso.hidden = !e.getModifierState('CapsLock');
+  };
+  senha.addEventListener('keyup', olhar);
+  senha.addEventListener('keydown', olhar);
+  senha.addEventListener('blur', () => aviso.hidden = true);
+
+  // ── conferir antes de mandar ─────────────────────────────────
+  // `novalidate` no form é para a mensagem ser a nossa, em português.
+  function reclamar(campo, texto) {
+    campo.setAttribute('aria-invalid', 'true');
+    const caixa = campo.closest('.campo');
+    let bilhete = caixa.querySelector('.bilhete');
+    if (!bilhete) {
+      bilhete = document.createElement('small');
+      bilhete.className = 'dica bilhete';
+      caixa.appendChild(bilhete);
+    }
+    bilhete.textContent = texto;
+  }
+  function limpar(campo) {
+    campo.removeAttribute('aria-invalid');
+    campo.closest('.campo')?.querySelector('.bilhete')?.remove();
+  }
+
+  forma.addEventListener('submit', e => {
+    const criando = abas.dataset.aba === 'cadastrar';
+    const email = forma.querySelector('[data-email]');
+    let ok = true;
+
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email.value.trim())) {
+      reclamar(email, 'Esse e-mail não parece completo.'); ok = false;
+    } else limpar(email);
+
+    if (criando && senha.value.length < 8) {
+      reclamar(senha, 'A senha precisa ter 8 caracteres ou mais.'); ok = false;
+    } else if (!senha.value) {
+      reclamar(senha, 'Digite sua senha.'); ok = false;
+    } else limpar(senha);
+
+    if (criando && confirma.value !== senha.value) {
+      reclamar(confirma, 'As duas senhas não são iguais.'); ok = false;
+    } else limpar(confirma);
+
+    // O aceite não fica dentro de um `.campo`, então a reclamação dele é
+    // marcar a própria caixa — e o foco vai para ela.
+    const rotuloAceite = aceite.closest('.aceite');
+    if (criando && !aceite.checked) {
+      rotuloAceite.classList.add('faltando'); ok = false;
+    } else rotuloAceite.classList.remove('faltando');
+
+    if (!ok) {
+      e.preventDefault();
+      (forma.querySelector('[aria-invalid]') ||
+       forma.querySelector('.aceite.faltando input'))?.focus();
+      return;
+    }
+    // Trava o botão para não mandar duas vezes e mostra que está indo — o
+    // servidor leva alguns instantes conferindo a senha.
+    const botao = forma.querySelector('.carrega');
+    botao.disabled = true;
+    botao.classList.add('indo');
+  });
+
+  forma.querySelectorAll('input').forEach(campo =>
+    campo.addEventListener('input', () => limpar(campo)));
+  aceite.addEventListener('change', () =>
+    aceite.closest('.aceite').classList.toggle('faltando', !aceite.checked));
+
+  // ── esqueci minha senha ──────────────────────────────────────
+  document.getElementById('esqueci')?.addEventListener('click', () => {
+    const email = forma.querySelector('[data-email]');
+    if (!email.value.trim()) {
+      reclamar(email, 'Escreva seu e-mail aqui e clique de novo.');
+      email.focus();
+      return;
+    }
+    const pedido = document.getElementById('forma-esqueci');
+    pedido.querySelector('input').value = email.value.trim();
+    pedido.submit();
+  });
+})();
+</script>
+{% endblock %}

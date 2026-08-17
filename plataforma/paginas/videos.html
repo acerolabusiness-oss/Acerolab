@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block titulo %}Vídeos · ACEROLAB{% endblock %}
+{% set secao = 'videos' %}
+
+{% block corpo %}
+<h1>Vídeos</h1>
+<p class="legenda-topo">Tudo que suas séries já produziram. O custo é o medido naquele
+  vídeo, não uma média.</p>
+
+{% if videos %}
+<div class="prateleira">
+  {% for v in videos %}
+    {% if v['estado'] == 'pronto' %}
+    <a class="fita" href="#" data-ver="{{ v['id'] }}" data-titulo="{{ v['titulo'] }}">
+      <img class="capa" src="/videos/{{ v['id'] }}/capa" alt="" loading="lazy"
+           onerror="this.remove()">
+      <span class="play"><i><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg></i></span>
+      <span class="pe">
+        <b>{{ v['titulo'] or 'Sem título' }}</b>
+        <small>{{ v['serie_nome'] }} · {{ v['custo_reais']|moeda }}</small>
+      </span>
+    </a>
+    {% elif v['estado'] == 'falhou' %}
+    <div class="fita falhou">
+      <span class="selo ruim"><i class="ponto"></i>Falhou</span>
+      <p>{{ v['erro'] }}</p>
+      <small>{{ v['serie_nome'] }}</small>
+    </div>
+    {% else %}
+    <div class="fita fazendo">
+      <div style="width:100%">
+        <span class="selo viva"><i class="ponto pulsa"></i>{{ 'Na fila' if v['estado'] == 'na_fila' else v['etapa'] }}</span>
+        <p style="color:var(--tinta-3);font-size:12.5px;margin:12px 0 0">{{ v['serie_nome'] }}</p>
+      </div>
+    </div>
+    {% endif %}
+  {% endfor %}
+</div>
+
+<dialog class="tocador" id="tocador">
+  <video id="fita-video" controls playsinline preload="none"></video>
+  <div class="barra">
+    <span class="titulo" id="fita-titulo"></span>
+    <a class="botao calmo" id="fita-baixar" href="#">Baixar</a>
+    <button class="botao mudo" style="color:#fff" onclick="tocador.close()">Fechar</button>
+  </div>
+</dialog>
+{% else %}
+<div class="vazio">
+  <h2>Nenhum vídeo ainda</h2>
+  <p>Vídeo só existe depois que você manda gerar um tema de alguma série.</p>
+  <a class="botao" href="/series">Ver minhas séries</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block roda_pe %}
+<script>
+const tocador = document.getElementById('tocador');
+if (tocador) {
+  const fita = document.getElementById('fita-video');
+  document.addEventListener('click', e => {
+    const alvo = e.target.closest('[data-ver]');
+    if (!alvo) return;
+    e.preventDefault();
+    fita.src = `/videos/${alvo.dataset.ver}/ver`;
+    document.getElementById('fita-titulo').textContent = alvo.dataset.titulo || '';
+    document.getElementById('fita-baixar').href = `/videos/${alvo.dataset.ver}/baixar`;
+    tocador.showModal();
+    fita.play().catch(() => {});
+  });
+  tocador.addEventListener('close', () => { fita.pause(); fita.removeAttribute('src'); fita.load(); });
+}
+if (document.querySelector('.fita.fazendo')) setTimeout(() => location.reload(), 5000);
+</script>
+{% endblock %}

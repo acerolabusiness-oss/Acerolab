@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titulo %}ACEROLAB{% endblock %}</title>
+<link rel="stylesheet" href="/estatico/estilo.css">
+<link rel="icon" href="/estatico/acerola.svg" type="image/svg+xml">
+</head>
+<body>
+
+{# A assinatura de verdade: a mesma da landing, vinda de site/logos.py.
+   Vai como arquivo (e não inline) para o navegador guardar em cache, e em
+   duas versões porque a palavra é escura no claro e branca no escuro. #}
+{% macro assinatura(altura) %}
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="/estatico/marca/assinatura-branca.svg">
+  <img src="/estatico/marca/assinatura.svg" alt="ACEROLAB" style="height:{{ altura }}px">
+</picture>
+{% endmacro %}
+
+{% if usuario %}
+<div class="app">
+  {# No celular a lateral vira barra fixa embaixo, como aplicativo. A marca
+     precisa de um lugar próprio lá em cima — este cabeçalho só aparece nessa
+     largura. #}
+  <header class="barra-topo">
+    <a class="logo" href="/series">{{ assinatura(22) }}</a>
+    <form method="post" action="/sair"><button class="sair" type="submit">Sair</button></form>
+  </header>
+
+  <nav class="lateral">
+    <a class="logo so-desktop" href="/series">{{ assinatura(24) }}</a>
+
+    <a class="menu" href="/series" {% if secao == 'series' %}aria-current="page"{% endif %}>
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/></svg>
+      Séries
+    </a>
+    <a class="menu" href="/planos" {% if secao == 'planos' %}aria-current="page"{% endif %}>
+      <svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M2.5 10h19"/></svg>
+      Planos
+    </a>
+    <a class="menu" href="/videos" {% if secao == 'videos' %}aria-current="page"{% endif %}>
+      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.5l5 2.5-5 2.5z" fill="currentColor" stroke="none"/></svg>
+      Vídeos
+    </a>
+
+    <div class="rodape-lateral so-desktop">
+      <div class="quem">
+        <span class="avatar">{{ (usuario['nome'] or usuario['email'])[0]|upper }}</span>
+        <span>{{ usuario['nome'] or usuario['email'] }}</span>
+      </div>
+      <form method="post" action="/sair"><button class="sair" type="submit">Sair</button></form>
+    </div>
+  </nav>
+
+  <main class="conteudo">
+    {% if faltando_chaves %}
+    <div class="aviso">
+      <div>
+        <b>Faltam {{ faltando_chaves|length }} chave{{ 's' if faltando_chaves|length > 1 }} de API.</b>
+        <p>Sem <code>{{ faltando_chaves|join('</code>, <code>')|safe }}</code> no arquivo <code>.env</code>,
+           a geração falha na primeira etapa. Dá pra montar séries e pautas normalmente — só não sai vídeo.</p>
+      </div>
+    </div>
+    {% endif %}
+    {% block corpo %}{% endblock %}
+  </main>
+</div>
+{% else %}
+<div class="portao">
+  <div class="lado-forma">
+    <div class="caixa">
+      <a class="logo" href="/">{{ assinatura(30) }}</a>
+      {% block porta %}{% endblock %}
+    </div>
+  </div>
+
+  {# Mural: quadros de vídeo que já foram ao ar, subindo devagar. A tela de
+     entrada dos concorrentes é um formulário no vazio; aqui a primeira coisa
+     que a pessoa vê é o que o produto entrega. Só enfeite — por isso fica
+     escondido de leitor de tela e some no celular. #}
+  <aside class="mural" aria-hidden="true">
+    <div class="fileiras">
+      {% for coluna in range(3) %}
+      <div class="fileira {{ 'desce' if coluna == 1 else 'sobe' }}">
+        {# a lista vai duplicada: quando a primeira metade termina de subir,
+           a segunda já está no lugar e a emenda não aparece #}
+        {% for volta in range(2) %}
+          {% for n in range(1, 14) if n % 3 == coluna %}
+          <img src="/estatico/mural/q{{ n }}.webp" alt="" loading="lazy" decoding="async">
+          {% endfor %}
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="veu">
+      <p class="frase">Seu canal posta todo dia.<br>Você nunca aparece.</p>
+      <p class="prova">33,4 milhões de visualizações já saíram daqui</p>
+    </div>
+  </aside>
+</div>
+{% endif %}
+
+{% block roda_pe %}{% endblock %}
+</body>
+</html>

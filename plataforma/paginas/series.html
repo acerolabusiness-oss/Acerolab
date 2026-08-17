@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block titulo %}Séries · ACEROLAB{% endblock %}
+{% set secao = 'series' %}
+
+{% block corpo %}
+<div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">
+  <div style="flex:1;min-width:260px">
+    <h1>Séries</h1>
+    <p class="legenda-topo">Cada série tem um nicho, uma voz e um visual. Ela propõe os temas;
+      você decide quais viram vídeo.</p>
+  </div>
+  <a class="botao" href="/series/nova">Criar série</a>
+</div>
+
+{% if series %}
+<div class="grade dois">
+  {% for s in series %}
+  {% set nicho = cat.NICHO_POR_CHAVE.get(s['nicho']) %}
+  {% set estilo = cat.ESTILO_POR_CHAVE.get(s['estilo']) %}
+  <a class="serie-cartao" href="/series/{{ s['id'] }}">
+    <div class="capa-serie">
+      {% if s['capas'] %}
+        {% for vid in s['capas'].split(',') %}
+        <img src="/videos/{{ vid }}/capa" alt="" loading="lazy">
+        {% endfor %}
+      {% elif estilo and estilo.miniatura %}
+        <img src="{{ estilo.miniatura }}" alt="" loading="lazy" style="grid-column:1/-1">
+      {% else %}
+        <span class="oco">
+          <img src="/estatico/marca/marca.svg" alt="">
+          nenhum vídeo ainda
+        </span>
+      {% endif %}
+    </div>
+    <div class="miolo">
+      <h3 style="margin:0 0 6px;font-size:17px;font-weight:600">{{ s['nome'] }}</h3>
+      <p class="detalhe" style="margin:0 0 14px;color:var(--tinta-2);font-size:14px">
+        {{ nicho.nome if nicho else 'Personalizado' }} ·
+        {{ cat.IDIOMA_POR_CODIGO[s['idioma']].nome if s['idioma'] in cat.IDIOMA_POR_CODIGO else s['idioma'] }} ·
+        {{ estilo.nome if estilo else s['estilo'] }}
+      </p>
+      <div class="selos" style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="selo">{{ s['prontos'] }} vídeo{{ 's' if s['prontos'] != 1 }}</span>
+        {% if s['pautas'] %}<span class="selo viva">{{ s['pautas'] }} tema{{ 's' if s['pautas'] != 1 }} esperando</span>{% endif %}
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="vazio">
+  <h2>Nenhuma série ainda</h2>
+  <p>Uma série é um assunto com voz e visual definidos. Depois de montada, ela passa a
+     propor temas — e nada é gerado sem você mandar.</p>
+  <a class="botao" href="/series/nova">Criar minha primeira série</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% block titulo %}Criar série · ACEROLAB{% endblock %}
+{% set secao = 'series' %}
+
+{% block corpo %}
+<p class="trilha"><a href="/series">Séries</a> › Criar nova série</p>
+
+<div class="passos" id="passos">
+  {% for _ in range(7) %}<i></i>{% endfor %}
+</div>
+
+<form method="post" action="/series/nova" id="wizard">
+
+<!-- ─────────────── 1. nicho ─────────────── -->
+<section data-passo hidden>
+  <h1>Escolha o nicho</h1>
+  <p class="legenda-topo">Selecione um pronto ou descreva o seu. A série vai propor um tema
+    novo dentro desse assunto toda vez, sem repetir o que já propôs.</p>
+
+  <div class="escolhas">
+    {% for n in cat.NICHOS %}
+    <label class="escolha">
+      <input type="radio" name="nicho" value="{{ n.chave }}" {% if loop.first %}checked{% endif %} required>
+      <h3>{{ n.nome }}{% if n.alta %} <span class="selo viva">Em alta</span>{% endif %}</h3>
+      <p>{{ n.resumo }}</p>
+    </label>
+    {% endfor %}
+    <label class="escolha">
+      <input type="radio" name="nicho" value="personalizado">
+      <h3>Personalizado</h3>
+      <p>Descreva o assunto do seu jeito — quanto mais específico, melhor a pauta.</p>
+      <input type="text" name="nicho_personalizado" style="margin-top:10px"
+             placeholder="ex.: naufrágios brasileiros pouco conhecidos">
+    </label>
+  </div>
+</section>
+
+<!-- ─────────────── 2. idioma e voz ─────────────── -->
+<section data-passo hidden>
+  <h1>Idioma e voz</h1>
+  <p class="legenda-topo">A voz narra em qualquer um dos idiomas — o que muda é o timbre.
+    Toque antes de escolher.</p>
+
+  <label class="campo" style="max-width:340px"><span>Idioma</span>
+    <select name="idioma" id="idioma">
+      {% for i in cat.IDIOMAS %}
+      <option value="{{ i.codigo }}">{{ i.bandeira }} {{ i.nome }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <div class="escolhas" style="margin-top:6px">
+    {% for v in cat.VOZES %}
+    <label class="escolha">
+      <div class="linha-voz">
+        <input type="radio" name="voz" value="{{ v.id }}" {% if loop.first %}checked{% endif %}>
+        <button type="button" class="tocar" data-voz="{{ v.id }}" aria-label="Ouvir {{ v.nome }}">
+          <svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>
+        </button>
+        <div>
+          <h3>{{ v.nome }} <span class="selo">{{ v.genero }}</span></h3>
+          <p>{{ v.tom }}</p>
+        </div>
+      </div>
+    </label>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ─────────────── 3. música ─────────────── -->
+<section data-passo hidden>
+  <h1>Música de fundo <span class="selo">Opcional</span></h1>
+  <p class="legenda-topo">Marque quantas quiser: uma é sorteada a cada vídeo, para a série
+    inteira não soar igual.</p>
+
+  {% if musicas %}
+  <div class="escolhas colunas">
+    {% for m in musicas %}
+    <label class="escolha">
+      <div class="linha-voz">
+        <input type="checkbox" name="musicas" value="{{ m.arquivo }}">
+        <button type="button" class="tocar" data-musica="{{ m.arquivo }}" aria-label="Ouvir {{ m.nome }}">
+          <svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>
+        </button>
+        <div><h3>{{ m.nome }}</h3><p>{{ m.genero }}</p></div>
+      </div>
+    </label>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="vazio">
+    <h2>Nenhuma trilha instalada ainda</h2>
+    <p>Ponha os arquivos <code>.mp3</code> em <code>recursos/musicas/</code> com os nomes
+       do catálogo. Só aparece aqui o que existe em disco — opção que não toca não vai pra tela.</p>
+  </div>
+  {% endif %}
+</section>
+
+<!-- ─────────────── 4. estilo visual ─────────────── -->
+<section data-passo hidden>
+  <h1>Estilo visual</h1>
+  <p class="legenda-topo">É o estilo das imagens de todas as cenas. Ninguém escolhe às cegas —
+    cada uma abaixo é uma amostra real do estilo.</p>
+
+  <div class="escolhas colunas">
+    {% for e in cat.ESTILOS %}
+    <label class="escolha visual">
+      <input type="radio" name="estilo" value="{{ e.chave }}" {% if loop.first %}checked{% endif %}>
+      {% if e.miniatura %}
+        <img class="mini" src="{{ e.miniatura }}" alt="Amostra do estilo {{ e.nome }}" loading="lazy">
+      {% else %}
+        <span class="semmini">amostra ainda não gerada<br>
+          <code>python -m plataforma.miniaturas</code></span>
+      {% endif %}
+      <span class="rotulo">{{ e.nome }}</span>
+    </label>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ─────────────── 5. legenda ─────────────── -->
+<section data-passo hidden>
+  <h1>Estilo de legenda</h1>
+  <p class="legenda-topo">A legenda aparece palavra por palavra, sincronizada com a narração.
+    É o que segura o olho nos primeiros segundos.</p>
+
+  <div class="escolhas colunas">
+    {% for l in cat.LEGENDAS %}
+    <label class="escolha" style="padding:15px">
+      <input type="radio" name="legenda" value="{{ l.chave }}" {% if loop.first %}checked{% endif %}>
+      <div class="previa-legenda">
+        <b style="color:{{ l.cor }};
+                  -webkit-text-stroke:{{ (28 / l.peso_contorno)|round(1) }}px {{ l.contorno }};
+                  paint-order:stroke fill;
+                  text-transform:{{ 'uppercase' if l.caixa_alta else 'lowercase' }}">sabia</b>
+      </div>
+      <h3>{{ l.nome }}</h3>
+    </label>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ─────────────── 6. redes ─────────────── -->
+<section data-passo hidden>
+  <h1>Publicar sozinho</h1>
+  <p class="legenda-topo">Conectar o canal para a série publicar no horário, sem você abrir
+    o aplicativo. Ainda não está ligado — e a gente prefere dizer por quê.</p>
+
+  <div class="escolhas colunas desligado">
+    {% for r in cat.REDES %}
+    <div class="escolha">
+      <h3>{{ r.nome }} <span class="selo">Em breve</span></h3>
+      <p>{{ r.motivo }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="aviso" style="margin-top:20px">
+    <div>
+      <b>Publicar por conta própria depende de auditoria das plataformas.</b>
+      <p>O Google exige verificação do aplicativo para liberar envio de vídeo, e o TikTok
+         exige auditoria para publicar de verdade em vez de rascunho. Enquanto isso não sai,
+         a série gera e você baixa — e o dia em que liberar, o botão liga para as séries
+         que já existem.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────── 7. detalhes ─────────────── -->
+<section data-passo hidden>
+  <h1>Detalhes da série</h1>
+  <p class="legenda-topo">Dê um nome e escolha a duração dos vídeos.</p>
+
+  <label class="campo" style="max-width:420px"><span>Nome da série</span>
+    <input type="text" name="nome" placeholder="ex.: Casos que ninguém explicou" maxlength="80"></label>
+
+  <div class="escolhas colunas" style="max-width:640px">
+    {% for d in cat.DURACOES %}
+    <label class="escolha">
+      <input type="radio" name="duracao" value="{{ d.chave }}" {% if loop.first %}checked{% endif %}>
+      <h3>{{ d.nome }}</h3>
+      <p>{{ d.cenas }} cenas.{% if d.aviso %} {{ d.aviso }}{% endif %}</p>
+    </label>
+    {% endfor %}
+  </div>
+</section>
+
+<div class="navegar">
+  <button type="button" class="botao calmo" id="voltar">Voltar</button>
+  <button type="button" class="botao" id="seguir">Continuar</button>
+  <button type="submit" class="botao" id="criar" hidden>Criar série</button>
+</div>
+</form>
+{% endblock %}
+
+{% block roda_pe %}
+<script>
+(() => {
+  const secoes = [...document.querySelectorAll('[data-passo]')];
+  const marcas = [...document.querySelectorAll('#passos i')];
+  const voltar = document.getElementById('voltar');
+  const seguir = document.getElementById('seguir');
+  const criar  = document.getElementById('criar');
+  let atual = 0;
+
+  function mostrar(i) {
+    atual = Math.max(0, Math.min(i, secoes.length - 1));
+    secoes.forEach((s, n) => s.hidden = n !== atual);
+    marcas.forEach((m, n) => m.classList.toggle('feito', n <= atual));
+    voltar.hidden = atual === 0;
+    const fim = atual === secoes.length - 1;
+    seguir.hidden = fim;
+    criar.hidden = !fim;
+    window.scrollTo({top: 0, behavior: 'instant'});
+  }
+  seguir.addEventListener('click', () => mostrar(atual + 1));
+  voltar.addEventListener('click', () => mostrar(atual - 1));
+
+  // Enter dentro do wizard avança em vez de enviar meia série.
+  document.getElementById('wizard').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && atual < secoes.length - 1) { e.preventDefault(); mostrar(atual + 1); }
+  });
+
+  // Digitar no campo do nicho personalizado já marca a opção dele.
+  const campoLivre = document.querySelector('input[name=nicho_personalizado]');
+  campoLivre?.addEventListener('input', () => {
+    document.querySelector('input[name=nicho][value=personalizado]').checked = true;
+  });
+
+  // Prévia de áudio: um tocando por vez.
+  let tocando = null;
+  function tocar(url, botao) {
+    if (tocando) { tocando.pause(); tocando = null; }
+    if (botao.dataset.ativo) { delete botao.dataset.ativo; return; }
+    document.querySelectorAll('[data-ativo]').forEach(b => delete b.dataset.ativo);
+    botao.dataset.ativo = '1';
+    tocando = new Audio(url);
+    tocando.play().catch(() => {
+      botao.title = 'Não deu para tocar — confira a chave da ElevenLabs no .env';
+      delete botao.dataset.ativo;
+    });
+    tocando.addEventListener('ended', () => delete botao.dataset.ativo);
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('.tocar');
+    if (!b) return;
+    e.preventDefault();
+    const idioma = document.getElementById('idioma')?.value || 'pt-BR';
+    if (b.dataset.voz)     tocar(`/api/voz/${b.dataset.voz}?idioma=${idioma}`, b);
+    if (b.dataset.musica)  tocar(`/api/musica/${b.dataset.musica}`, b);
+  });
+
+  mostrar(0);
+})();
+</script>
+{% endblock %}

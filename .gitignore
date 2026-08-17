@@ -1,0 +1,7 @@
+.env
+.venv/
+saida/
+acerolab.db*
+__pycache__/
+*.pyc
+plataforma/estatico/estilos/*.webp

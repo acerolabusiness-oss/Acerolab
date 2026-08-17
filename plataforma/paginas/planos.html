@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block titulo %}Planos · ACEROLAB{% endblock %}
+{% set secao = 'planos' %}
+
+{% block corpo %}
+{# A pergunta que a pessoa realmente responde aqui é "com que frequência meu
+   canal vai postar". O nome do plano é só a etiqueta disso — por isso o
+   ritmo é o título do cartão e o nome vira selo pequeno. #}
+{% if atual %}
+{# Quem já assinou não está escolhendo plano — está conferindo o que tem. A
+   vitrine de compra some, porque deixar as duas coisas na mesma tela faz a
+   pessoa achar que vai comprar de novo. #}
+<h1>Sua assinatura</h1>
+<p class="legenda-topo">O que você tem hoje e o que ela cobre.</p>
+{% else %}
+<div class="topo-planos">
+  <div>
+    <h1>Com que frequência seu canal posta?</h1>
+    <p class="legenda-topo">Uma <b>série</b> alimenta um canal. Quem toca três canais
+      assina três séries — o preço abaixo é o de uma.</p>
+  </div>
+  <div class="ciclo">
+    <label><input type="radio" name="anual" value="" form="planos" checked><span>Mensal</span></label>
+    <label><input type="radio" name="anual" value="1" form="planos"><span>Anual <i>−25%</i></span></label>
+  </div>
+</div>
+{% endif %}
+
+{% if erro %}<p class="erro" role="alert">{{ erro }}</p>{% endif %}
+
+{% if atual %}
+{% set p = planos.PLANO_POR_CHAVE.get(atual['plano']) %}
+<div class="assinatura">
+  <div class="cartao-assinatura">
+    <span class="etiqueta">Plano ativo</span>
+    <h2>{{ p.nome if p else atual['plano']|capitalize }}</h2>
+    <p class="ritmo">{{ p.ritmo if p else '' }}</p>
+
+    <dl class="cobertura">
+      <div><dt>Canais cobertos</dt><dd>{{ atual['series'] }}</dd></div>
+      <div><dt>Vídeos por mês</dt>
+        <dd>{{ (p.videos_mes * atual['series']) if p else '—' }}</dd></div>
+      <div><dt>Situação</dt>
+        <dd class="{{ 'boa' if atual['estado'] == 'ativa' else 'ruim' }}">
+          {{ {'ativa':'Em dia','vencida':'Pagamento pendente'}.get(atual['estado'],'Cancelada') }}
+        </dd></div>
+    </dl>
+
+    <div class="acoes">
+      <a class="botao" href="/assinatura/gerenciar">Gerenciar assinatura</a>
+      <span class="nota">Trocar de plano, mudar o cartão, ver faturas ou cancelar —
+        tudo na página segura do Stripe.</span>
+    </div>
+  </div>
+
+  <a class="somar" href="/planos?somar=1">
+    <b>Quer mais canais?</b>
+    <span>Aumente a quantidade de séries dentro de “Gerenciar assinatura”.
+      Assinar de novo aqui criaria uma segunda cobrança.</span>
+  </a>
+</div>
+
+{% else %}
+<form method="post" action="/assinar" id="planos">
+  <div class="escada">
+    {% for p in planos.PLANOS %}
+    <label class="degrau" data-mes="{{ p.centavos_mes }}" data-ano="{{ p.centavos_ano }}"
+           data-videos="{{ p.videos_mes }}">
+      <input type="radio" name="plano" value="{{ p.chave }}"
+             {% if p.chave == 'pro' %}checked{% endif %}>
+
+      <span class="cabeca">
+        <span class="etiqueta">{{ p.nome }}</span>
+        {% if p.destaque %}<i class="destaque-plano">{{ p.destaque }}</i>{% endif %}
+      </span>
+
+      {# O número grande é o que a pessoa RECEBE, não o que ela paga. #}
+      <span class="quanto">
+        <b>{{ p.videos_mes }}</b>
+        <small>vídeos por mês</small>
+      </span>
+
+      <span class="ritmo">{{ p.ritmo }}</span>
+
+      {# Quatro degraus, N preenchidos: a mesma informação da tabela, mas
+         legível antes de ler. #}
+      {% set degrau = loop.index0 %}
+      <span class="barras" aria-hidden="true">
+        {% for n in range(4) %}<i class="{{ 'cheia' if n <= degrau }}"></i>{% endfor %}
+      </span>
+
+      <span class="preco">
+        <b data-preco>{{ p.reais_mes|moeda }}</b>
+        <small>por série/mês</small>
+      </span>
+
+      <span class="conta">
+        <b data-unitario>{{ p.por_video|moeda }}</b> por vídeo
+      </span>
+
+      <span class="marca-escolha" aria-hidden="true">
+        <svg viewBox="0 0 16 16"><path d="M3 8.4l3.2 3.2L13 4.8"/></svg>
+      </span>
+    </label>
+    {% endfor %}
+  </div>
+
+  <div class="fechamento">
+    <div class="quantas">
+      <span class="titulo">Quantos canais?</span>
+      <div class="contador">
+        <button type="button" data-passo="-1" aria-label="Menos um canal">−</button>
+        <input type="number" name="series" id="series" value="1" min="1" max="50"
+               inputmode="numeric" aria-label="Quantidade de séries">
+        <button type="button" data-passo="1" aria-label="Mais um canal">+</button>
+      </div>
+      <small id="explica">1 série · 60 vídeos por mês</small>
+    </div>
+
+    {# Sempre o número menor em destaque: no anual o grande é o equivalente
+       mensal, e a cobrança cheia do ano vira a nota de baixo. #}
+    <div class="total">
+      <span>Você paga</span>
+      <b id="total">R$ 49,90</b>
+      <small id="periodo">por mês</small>
+    </div>
+
+    <button class="botao carrega" type="submit">
+      <span class="rotulo">Assinar</span><span class="roda" aria-hidden="true"></span>
+    </button>
+  </div>
+
+  {% if teste %}
+  <p class="teste">Stripe em modo de teste — nenhuma cobrança acontece.
+     Cartão <code>4242 4242 4242 4242</code>, qualquer data futura, qualquer CVC.</p>
+  {% endif %}
+</form>
+{% endif %}
+
+<h2 class="titulo-secao">Em qualquer plano</h2>
+<ul class="incluso">
+  {% for item in planos.INCLUSO %}
+  <li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.4l3.2 3.2L13 4.8"/></svg>{{ item }}</li>
+  {% endfor %}
+</ul>
+
+<p class="miudo" style="text-align:left;margin-top:26px">
+  Cancele quando quiser — o acesso vale até o fim do período pago.
+  Devolução integral em até 7 dias, como manda o Código de Defesa do Consumidor.
+  <a href="/termos" target="_blank" rel="noopener">Termos</a>.
+</p>
+{% endblock %}
+
+{% block roda_pe %}
+<script>
+(() => {
+  // Quem já assinou vê a tela de gerenciar, que não tem formulário nenhum.
+  const forma = document.getElementById('planos');
+  if (!forma) return;
+
+  const series = document.getElementById('series');
+  const total = document.getElementById('total');
+  const periodo = document.getElementById('periodo');
+  const explica = document.getElementById('explica');
+
+  function dinheiro(centavos) {
+    const [inteiro, cents] = (centavos / 100).toFixed(2).split('.');
+    return 'R$ ' + inteiro.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + cents;
+  }
+
+  // Os rádios mensal/anual ficam FORA do <form> (ligados por form="planos"),
+  // então `querySelector` não os alcança — `form.elements` sim.
+  const marcado = nome => [...forma.elements[nome]].find(e => e.checked);
+
+  function recalcular() {
+    const anual = marcado('anual').value === '1';
+    const n = Math.max(1, Math.min(50, parseInt(series.value, 10) || 1));
+
+    forma.querySelectorAll('.degrau').forEach(cartao => {
+      const centavos = Number(anual ? cartao.dataset.ano : cartao.dataset.mes);
+      const porMes = anual ? centavos / 12 : centavos;
+      const videos = Number(cartao.dataset.videos);
+      cartao.querySelector('[data-preco]').textContent = dinheiro(porMes);
+      cartao.querySelector('[data-unitario]').textContent = dinheiro(porMes / videos);
+      cartao.classList.toggle('eleito', cartao.querySelector('input').checked);
+    });
+
+    const cartao = marcado('plano').closest('.degrau');
+    const centavos = Number(anual ? cartao.dataset.ano : cartao.dataset.mes);
+
+    // No anual, o número grande é quanto sai por mês — o valor cheio do ano
+    // vira a linha de baixo. O menor sempre em destaque.
+    if (anual) {
+      total.textContent = dinheiro(centavos * n / 12);
+      periodo.textContent = `por mês · ${dinheiro(centavos * n)} uma vez por ano`;
+    } else {
+      total.textContent = dinheiro(centavos * n);
+      periodo.textContent = 'por mês';
+    }
+
+    explica.textContent =
+      `${n} série${n > 1 ? 's' : ''} · ${Number(cartao.dataset.videos) * n} vídeos por mês`;
+  }
+
+  // Os rádios Mensal/Anual moram FORA do <form>, então o `change` deles não
+  // borbulha até ele. Escutar em cada um resolve; escutar só no form fazia o
+  // botão de ciclo não recalcular nada até a pessoa mexer em outra coisa.
+  [...forma.elements.anual, ...forma.elements.plano]
+    .forEach(campo => campo.addEventListener('change', recalcular));
+  series.addEventListener('input', recalcular);
+  forma.querySelectorAll('[data-passo]').forEach(b =>
+    b.addEventListener('click', () => {
+      series.value = Math.max(1, Math.min(50,
+        (parseInt(series.value, 10) || 1) + Number(b.dataset.passo)));
+      recalcular();
+    }));
+
+  forma.addEventListener('submit', () => {
+    const botao = forma.querySelector('.carrega');
+    botao.disabled = true; botao.classList.add('indo');
+  });
+
+  recalcular();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block titulo %}{{ serie['nome'] }} · ACEROLAB{% endblock %}
+{% set secao = 'series' %}
+
+{% set ETAPAS = ['roteiro', 'imagens', 'narração', 'legendas', 'montagem', 'capa'] %}
+
+{% macro fita(v) %}
+  {% if v['estado'] == 'pronto' %}
+  <a class="fita" href="#" data-ver="{{ v['id'] }}" data-titulo="{{ v['titulo'] }}">
+    <img class="capa" src="/videos/{{ v['id'] }}/capa" alt="" loading="lazy"
+         onerror="this.remove()">
+    <span class="play"><i>
+      <svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>
+    </i></span>
+    <span class="pe">
+      <b>{{ v['titulo'] or 'Sem título' }}</b>
+      <small>{{ v['custo_reais']|moeda }}</small>
+    </span>
+  </a>
+
+  {% elif v['estado'] == 'falhou' %}
+  <div class="fita falhou">
+    <span class="selo ruim"><i class="ponto"></i>Falhou</span>
+    <p>{{ v['erro'] }}</p>
+    <form method="post" action="/series/{{ serie['id'] }}/gerar">
+      {% if v['tema_id'] %}<input type="hidden" name="tema_id" value="{{ v['tema_id'] }}">{% endif %}
+      <button class="botao calmo" type="submit">Tentar de novo</button>
+    </form>
+  </div>
+
+  {% else %}
+  {% set atual = v['etapa'] %}
+  <div class="fita fazendo">
+    <div style="width:100%">
+      <span class="selo viva"><i class="ponto pulsa"></i>{{ 'Na fila' if v['estado'] == 'na_fila' else 'Produzindo' }}</span>
+      <ul class="etapas">
+        {% set ns = namespace(passou=true) %}
+        {% for e in ETAPAS %}
+          {% if e == atual %}{% set ns.passou = false %}{% endif %}
+          <li class="{{ 'agora' if e == atual else ('feita' if ns.passou and atual else '') }}">
+            <i></i>{{ e }}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+{% endmacro %}
+
+{% block corpo %}
+<p class="trilha"><a href="/series">Séries</a> › {{ serie['nome'] }}</p>
+
+<div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">
+  <div style="flex:1;min-width:260px">
+    <h1>{{ serie['nome'] }}</h1>
+    <p class="legenda-topo">
+      {{ cat.NICHO_POR_CHAVE[serie['nicho']].nome if serie['nicho'] in cat.NICHO_POR_CHAVE else 'Personalizado' }} ·
+      {{ cat.IDIOMA_POR_CODIGO[serie['idioma']].nome if serie['idioma'] in cat.IDIOMA_POR_CODIGO else serie['idioma'] }} ·
+      {{ cat.ESTILO_POR_CHAVE[serie['estilo']].nome if serie['estilo'] in cat.ESTILO_POR_CHAVE else serie['estilo'] }} ·
+      {{ cat.DURACAO_POR_CHAVE[serie['duracao']].nome if serie['duracao'] in cat.DURACAO_POR_CHAVE else serie['duracao'] }}
+    </p>
+  </div>
+  <form method="post" action="/series/{{ serie['id'] }}/pautas">
+    <button class="botao calmo" type="submit">Propor temas</button>
+  </form>
+</div>
+
+<!-- ───────── pautas esperando ───────── -->
+<h2 style="font-size:15px;margin:26px 0 4px">Temas propostos</h2>
+<p style="color:var(--tinta-2);font-size:14px;margin:0 0 16px;max-width:60ch">
+  Leia antes de gastar. Só o que você mandar gerar vira imagem e narração — o resto não
+  custa nada, e a série não vai repetir esses temas depois.</p>
+
+{% if pautas %}
+<div class="pautas">
+  {% for p in pautas %}
+  <article class="cartaz">
+    <div class="aspas">“</div>
+    <h3>{{ p['titulo'] }}</h3>
+    <p class="gancho">{{ p['gancho'] }}</p>
+    <div class="pe">
+      <form method="post" action="/pautas/{{ p['id'] }}/descartar">
+        <button class="botao mudo" type="submit">Descartar</button>
+      </form>
+      <form method="post" action="/series/{{ serie['id'] }}/gerar">
+        <input type="hidden" name="tema_id" value="{{ p['id'] }}">
+        <button class="botao" type="submit">Gerar vídeo</button>
+      </form>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div class="vazio">
+  <h2>Nenhum tema esperando</h2>
+  <p>Peça pautas novas: a série propõe títulos e ganchos dentro do nicho, evitando o que
+     já propôs antes.</p>
+  <form method="post" action="/series/{{ serie['id'] }}/pautas">
+    <button class="botao" type="submit">Propor temas</button>
+  </form>
+</div>
+{% endif %}
+
+<!-- ───────── prateleira ───────── -->
+<h2 style="font-size:15px;margin:40px 0 16px">Vídeos desta série</h2>
+{% if videos %}
+<div class="prateleira">
+  {% for v in videos %}{{ fita(v) }}{% endfor %}
+</div>
+{% else %}
+<p style="color:var(--tinta-2)">Nenhum vídeo ainda. Mande gerar um tema acima.</p>
+{% endif %}
+
+<dialog class="tocador" id="tocador">
+  <video id="fita-video" controls playsinline preload="none"></video>
+  <div class="barra">
+    <span class="titulo" id="fita-titulo"></span>
+    <a class="botao calmo" id="fita-baixar" href="#">Baixar</a>
+    <button class="botao mudo" style="color:#fff" onclick="tocador.close()">Fechar</button>
+  </div>
+</dialog>
+{% endblock %}
+
+{% block roda_pe %}
+<script>
+// Tocar dentro da página: o cliente quer ver o que saiu antes de baixar.
+const tocador = document.getElementById('tocador');
+const fita = document.getElementById('fita-video');
+document.addEventListener('click', e => {
+  const alvo = e.target.closest('[data-ver]');
+  if (!alvo) return;
+  e.preventDefault();
+  const id = alvo.dataset.ver;
+  fita.src = `/videos/${id}/ver`;
+  document.getElementById('fita-titulo').textContent = alvo.dataset.titulo || '';
+  document.getElementById('fita-baixar').href = `/videos/${id}/baixar`;
+  tocador.showModal();
+  fita.play().catch(() => {});
+});
+tocador.addEventListener('close', () => { fita.pause(); fita.removeAttribute('src'); fita.load(); });
+
+// Enquanto houver vídeo em produção, a página se atualiza sozinha.
+if (document.querySelector('.fita.fazendo')) setTimeout(() => location.reload(), 5000);
+</script>
+{% endblock %}

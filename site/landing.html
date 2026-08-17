@@ -1,0 +1,987 @@
+<title>Séries no Automático</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="__FAVICON__">
+
+<style>
+  @font-face {
+    font-family: "Outfit";
+    src: url(data:font/woff2;base64,__FONT_DISPLAY__) format("woff2");
+    font-weight: 100 900;
+    font-display: block;
+  }
+
+  /* Tema claro assumido de propósito: os dois concorrentes são preto-arroxeado.
+     Branco com vermelho acerola lê como YouTube e como SaaS brasileiro confiável. */
+  :root {
+    --papel: #FFFFFF;
+    --papel-2: #F2F2F3;
+    --papel-3: #E9E9EB;
+    --tinta: #1A1114;
+    --tinta-2: #3A3A40;
+    --suave: #6A6A72;
+    --linha: #E3E3E6;
+    --acerola: #E8253D;
+    --acerola-2: #B8122A;
+    --folha: #3F6B4E;
+    --dinheiro: #12924B;
+    --ambar: #B4740A;
+    --sombra: 0 1px 2px rgba(26, 17, 20, .04), 0 12px 32px -16px rgba(26, 17, 20, .22);
+    --raio: 18px;
+    --display: "Outfit", sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--papel);
+    color: var(--tinta);
+    font-family: var(--display);
+    font-size: 17px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  .capa { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  a { color: inherit; }
+  img { display: block; max-width: 100%; }
+
+  /* ---------- navegação ---------- */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(255, 255, 255, .88);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--linha);
+  }
+  .nav-int {
+    max-width: 1120px; margin: 0 auto; padding: 13px 24px;
+    display: flex; align-items: center; gap: 18px;
+  }
+  .marca-nav { display: flex; align-items: center; gap: 9px; text-decoration: none; }
+  .marca-nav svg.s { width: 26px; }
+  .marca-nav svg.w { width: 94px; }
+  .nav-links { display: flex; gap: 26px; margin-left: auto; }
+  .nav-links a { font-size: 14.5px; font-weight: 500; color: var(--suave); text-decoration: none; transition: color .16s; }
+  .nav-links a:hover { color: var(--tinta); }
+  @media (max-width: 900px) { .nav-links { display: none; } }
+  .nav-acao { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+  @media (min-width: 901px) { .nav-acao { margin-left: 0; } }
+  .entrar { font-size: 14.5px; font-weight: 500; color: var(--suave); text-decoration: none; }
+  .entrar:hover { color: var(--tinta); }
+
+  /* ---------- botões ---------- */
+  .botao {
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    background: var(--acerola); color: #fff;
+    font-family: var(--display); font-weight: 650; font-size: 15px;
+    padding: 12px 22px; border-radius: 999px; border: none;
+    cursor: pointer; text-decoration: none; white-space: nowrap;
+    transition: background .16s, transform .16s;
+  }
+  .botao:hover { background: var(--acerola-2); }
+  .botao:active { transform: translateY(1px); }
+  .botao:focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; }
+  .botao.grande { font-size: 17.5px; padding: 17px 34px; box-shadow: 0 10px 24px -10px rgba(232, 37, 61, .6); }
+
+  /* ---------- tipografia ---------- */
+  h1 { font-size: clamp(38px, 6.2vw, 66px); font-weight: 800; line-height: 1.04; letter-spacing: -.035em; margin: 0; text-wrap: balance; }
+  h2 { font-size: clamp(27px, 3.8vw, 42px); font-weight: 750; line-height: 1.1; letter-spacing: -.028em; margin: 0; text-wrap: balance; }
+  h3 { font-size: 18px; font-weight: 650; margin: 0; letter-spacing: -.01em; }
+  p { margin: 0; }
+  .conduz { color: var(--suave); font-size: 17px; max-width: 58ch; line-height: 1.55; }
+  .rotulo { font-size: 11.5px; font-weight: 700; letter-spacing: .17em; text-transform: uppercase; color: var(--acerola); margin: 0; }
+  .micro { font-size: 13.5px; color: var(--suave); }
+
+  section { padding: clamp(50px, 6.5vw, 84px) 0; }
+  .cabeca { display: flex; flex-direction: column; gap: 13px; margin-bottom: 36px; }
+
+  /* ---------- herói com faixa diagonal ---------- */
+  .faixa {
+    position: relative;
+    background: var(--acerola);
+    color: #fff;
+    /* arco em vez de corte reto: o raio horizontal de 50% abre a meia-lua */
+    border-radius: 0 0 50% 50% / 0 0 clamp(90px, 13vw, 190px) clamp(90px, 13vw, 190px);
+    padding-bottom: clamp(130px, 17vw, 230px);
+  }
+  .heroi {
+    padding: clamp(46px, 6.5vw, 82px) 0 clamp(34px, 4vw, 52px);
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center; gap: 22px;
+  }
+  .heroi h1 { max-width: none; text-wrap: nowrap; }
+  .heroi h1, .heroi .conduz { overflow-wrap: anywhere; }
+  @media (max-width: 760px) { .heroi h1 { text-wrap: balance; } }
+  @media (max-width: 760px) { .heroi h1 br { display: none; } }
+  .heroi .conduz { font-size: clamp(17px, 2vw, 20px); max-width: 52ch; color: var(--tinta-2); text-wrap: pretty; }
+
+
+  /* esteira infinita: dois grupos idênticos deslizam -50%, então a emenda nunca aparece */
+  .esteira {
+    overflow: hidden;
+    padding-block: 6px 24px;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+  }
+  .pista { display: flex; width: max-content; animation: correr 46s linear infinite; }
+  .esteira:hover .pista { animation-play-state: paused; }
+  .grupo { display: flex; gap: 18px; padding-right: 18px; }
+  @keyframes correr { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  .vertical {
+    flex: none;
+    width: clamp(210px, 23vw, 286px);
+    aspect-ratio: 9 / 16;
+    border-radius: 18px; overflow: hidden; position: relative;
+    background-color: var(--papel-2);
+    background-size: cover; background-position: center;
+    border: 1px solid var(--linha); margin: 0; box-shadow: var(--sombra);
+  }
+  .vertical video {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .vertical figcaption {
+    position: absolute; left: 12px; bottom: 12px; z-index: 2;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(10, 8, 8, .78); backdrop-filter: blur(4px);
+    color: #fff; font-size: 14.5px; font-weight: 700;
+    padding: 5px 11px; border-radius: 8px; font-variant-numeric: tabular-nums;
+  }
+  .vertical figcaption svg { width: 11px; flex: none; }
+
+  /* o carrossel agora e so video real, sem quadro emprestado */
+
+  @media (prefers-reduced-motion: reduce) {
+    .pista { animation: none; }
+    .esteira { overflow-x: auto; }
+  }
+
+  /* ---------- prova de conta ---------- */
+  .prova-conta { display: flex; justify-content: center; }
+  .prova-conta img {
+    border-radius: 20px; border: 1px solid var(--linha);
+    max-width: 560px; width: 100%; box-shadow: var(--sombra);
+  }
+
+  /* ---------- cartao do canal proprio ---------- */
+  .canais-dupla { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 18px; }
+  .cartao-canal {
+    display: block; margin: 0;
+    background: var(--papel); border: 1px solid var(--linha);
+    border-radius: 22px; padding: 22px; box-shadow: var(--sombra);
+    text-decoration: none; transition: border-color .16s, transform .16s;
+  }
+  .cartao-canal:hover { border-color: var(--acerola); transform: translateY(-2px); }
+  .cartao-canal:focus-visible { outline: 3px solid var(--acerola); outline-offset: 3px; }
+  .canal-topo { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .canal-marca {
+    width: 44px; height: 44px; border-radius: 999px; flex: none;
+    background: var(--tinta); display: grid; place-items: center;
+  }
+  .canal-marca svg { width: 24px; }
+  .canal-id { display: flex; flex-direction: column; line-height: 1.25; }
+  .canal-nome { font-size: 16px; font-weight: 700; }
+  .canal-arroba { font-size: 13.5px; color: var(--suave); }
+  .canal-ver {
+    margin-left: auto; font-size: 13px; font-weight: 650;
+    color: var(--acerola); white-space: nowrap;
+  }
+  .canal-tres { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .canal-onde { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--suave); }
+  .canal-tres figure { margin: 0; position: relative; border-radius: 12px; overflow: hidden; background: #0D0A0B; }
+  .canal-tres img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+  .canal-tres figcaption {
+    position: absolute; left: 8px; bottom: 8px;
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(10, 8, 8, .78); color: #fff;
+    font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .canal-tres figcaption svg { width: 9px; flex: none; }
+  .canal-numeros {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+    margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--linha);
+  }
+  .canal-numeros div { display: flex; flex-direction: column; align-items: center; text-align: center; }
+  .canal-numeros strong {
+    font-size: 25px; font-weight: 800; letter-spacing: -.03em;
+    font-variant-numeric: tabular-nums; line-height: 1.1;
+  }
+  .canal-numeros span { font-size: 12.5px; color: var(--suave); line-height: 1.3; }
+
+  /* ---------- bloco unico: exemplo colado no simulador ---------- */
+  .duo {
+    display: grid;
+    grid-template-columns: minmax(230px, 300px) 1fr;
+    background: var(--papel-2);
+    border: 1px solid var(--linha);
+    border-radius: 24px;
+    overflow: hidden;
+  }
+  @media (max-width: 800px) { .duo { grid-template-columns: 1fr; } }
+
+  .lado-video {
+    position: relative; display: block; margin: 0;
+    min-height: 430px; overflow: hidden;
+    text-decoration: none; background: #0D0A0B;
+  }
+  .lado-video video {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .selo-canto {
+    position: absolute; z-index: 2;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(10, 8, 8, .78); backdrop-filter: blur(4px);
+    color: #fff; font-size: 14.5px; font-weight: 700;
+    padding: 5px 11px; border-radius: 8px; font-variant-numeric: tabular-nums;
+  }
+  .selo-views-v { left: 14px; bottom: 14px; }
+  .selo-views-v svg { width: 11px; flex: none; }
+  .selo-tiktok {
+    right: 14px; top: 14px; font-size: 12.5px; font-weight: 650;
+    letter-spacing: .01em; opacity: .92; transition: background .16s, opacity .16s;
+  }
+  .lado-video:hover .selo-tiktok { background: var(--acerola); opacity: 1; }
+  .lado-video:focus-visible { outline: 3px solid var(--acerola); outline-offset: -3px; }
+
+  .lado-conta {
+    padding: clamp(24px, 3vw, 38px);
+    display: flex; flex-direction: column; gap: 26px; justify-content: center;
+  }
+  .controles { display: flex; flex-direction: column; gap: 22px; }
+  .controle { display: flex; flex-direction: column; gap: 9px; }
+  .controle-topo { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .controle-topo label { font-size: 14.5px; font-weight: 600; }
+  .controle-topo output { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--acerola); }
+
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
+    border-radius: 999px; background: var(--linha); outline: none; cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 22px; height: 22px;
+    border-radius: 50%; background: var(--acerola); border: 3px solid #fff;
+    box-shadow: 0 1px 5px rgba(26, 17, 20, .3); cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 22px; height: 22px; border-radius: 50%; background: var(--acerola);
+    border: 3px solid #fff; box-shadow: 0 1px 5px rgba(26, 17, 20, .3); cursor: pointer;
+  }
+  input[type="range"]:focus-visible { outline: 3px solid var(--acerola); outline-offset: 4px; }
+  .dica { font-size: 12.5px; color: var(--suave); }
+
+  .resultado-caixa {
+    background: var(--papel); border: 1px solid var(--linha); border-radius: var(--raio);
+    padding: 22px 24px; display: flex; flex-direction: column; gap: 3px;
+    box-shadow: var(--sombra);
+  }
+  .titulo-p { font-size: 11.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--suave); }
+  .valor {
+    font-size: clamp(34px, 4.6vw, 46px); font-weight: 800; letter-spacing: -.035em;
+    color: var(--dinheiro); font-variant-numeric: tabular-nums; line-height: 1.05;
+  }
+  .detalhe { font-size: 13px; color: var(--suave); margin-top: 6px; line-height: 1.5; }
+  .aviso { font-size: 12.5px; color: var(--suave); margin-top: 20px; line-height: 1.55; max-width: 82ch; }
+
+  /* ---------- RPM: duas colunas com pilha em ziguezague ---------- */
+  .dois-lados {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: clamp(28px, 4vw, 56px); align-items: start;
+  }
+  /* o texto acompanha a rolagem da pilha de painéis */
+  @media (min-width: 861px) { .dois-lados > .cabeca { position: sticky; top: 92px; } }
+  @media (max-width: 860px) { .dois-lados { grid-template-columns: 1fr; } }
+  /* ---------- grafico de RPM desenhado em SVG ---------- */
+  .cartao-rpm {
+    background: var(--papel); border: 1px solid var(--linha);
+    border-radius: 20px; padding: 24px 22px 18px; box-shadow: var(--sombra);
+    margin: 0; display: flex; flex-direction: column;
+  }
+  .rpm-rotulo { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--suave); }
+  .rpm-valor {
+    font-size: clamp(34px, 4.6vw, 46px); font-weight: 800; letter-spacing: -.035em;
+    color: var(--tinta); font-variant-numeric: tabular-nums; line-height: 1.06;
+  }
+  .rpm-periodo { font-size: 13.5px; color: var(--suave); }
+  .rpm-nota { font-size: 12.5px; color: var(--suave); margin-top: 12px; line-height: 1.5; }
+
+  .g-rpm { width: 100%; height: auto; margin-top: 16px; overflow: visible; font-family: var(--display); }
+  .g-grade { stroke: var(--linha); stroke-width: 1; stroke-dasharray: 2 4; }
+  .g-eixo, .g-dia { fill: var(--suave); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .g-dia { text-anchor: middle; }
+  .g-barra { fill: var(--dinheiro); transition: fill .14s; }
+  .g-alvo-hover { fill: transparent; }
+  .g-col { cursor: default; }
+  .g-col:hover .g-barra, .g-col:focus-visible .g-barra { fill: #0B6E38; }
+  .g-col:focus-visible { outline: none; }
+
+  .g-dica { opacity: 0; pointer-events: none; transition: opacity .12s; }
+  .g-dica-caixa { fill: var(--tinta); }
+  .g-dica-txt { fill: #fff; font-size: 12.5px; font-weight: 600; text-anchor: middle; }
+  .g-haste { stroke: var(--tinta); stroke-width: 1.5; }
+  .g-ponto { fill: var(--tinta); stroke: var(--papel); stroke-width: 2.5; }
+
+  /* ---------- grades ---------- */
+  .grade { display: grid; gap: 18px; }
+  .g3 { grid-template-columns: repeat(auto-fit, minmax(268px, 1fr)); }
+  .cartao {
+    background: var(--papel); border: 1px solid var(--linha);
+    border-radius: var(--raio); padding: 24px;
+    display: flex; flex-direction: column; gap: 10px; box-shadow: var(--sombra);
+  }
+  .cartao p { color: var(--suave); font-size: 15px; line-height: 1.55; }
+  .cartao.destaque { border-color: var(--acerola); border-width: 2px; background: var(--papel); }
+  .preco-linha { font-size: 15px; font-weight: 700; }
+  .ruim { color: #C22B2B; }
+  .meio { color: var(--ambar); }
+  .bom { color: var(--dinheiro); }
+  .passo-num {
+    width: 30px; height: 30px; border-radius: 999px; background: var(--acerola); color: #fff;
+    display: grid; place-items: center; font-size: 14px; font-weight: 700;
+  }
+
+  /* ---------- preços ---------- */
+  .planos { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(228px, 1fr)); }
+  .plano {
+    background: var(--papel); border: 1px solid var(--linha); border-radius: var(--raio);
+    padding: 24px; display: flex; flex-direction: column; gap: 4px; position: relative;
+    box-shadow: var(--sombra);
+  }
+  .plano.popular { border-color: var(--acerola); border-width: 2px; }
+  .fita {
+    position: absolute; top: -11px; left: 22px; background: var(--acerola); color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+    padding: 4px 11px; border-radius: 999px;
+  }
+  .plano .nome-p { font-size: 16px; font-weight: 700; }
+  .plano .ritmo { font-size: 13.5px; color: var(--suave); }
+  .plano .valor-p { font-size: 30px; font-weight: 800; letter-spacing: -.03em; margin-top: 12px; font-variant-numeric: tabular-nums; }
+  .plano .valor-p span { font-size: 13.5px; font-weight: 500; color: var(--suave); letter-spacing: 0; }
+  .plano .unitario { font-size: 13px; color: var(--dinheiro); font-weight: 650; margin-top: 3px; }
+
+  /* ---------- vagas ---------- */
+  .vaga-prova {
+    border: 2px dashed var(--linha); border-radius: var(--raio); padding: 22px;
+    display: flex; flex-direction: column; gap: 7px; background: var(--papel-2);
+  }
+  .vaga-prova .marcador-vaga { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ambar); }
+  .vaga-prova p { color: var(--suave); font-size: 14.5px; line-height: 1.55; }
+
+  /* ---------- FAQ ---------- */
+  details { border-bottom: 1px solid var(--linha); padding: 19px 0; }
+  summary {
+    cursor: pointer; font-weight: 600; font-size: 17px; list-style: none;
+    display: flex; justify-content: space-between; gap: 20px; align-items: center;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; font-size: 22px; color: var(--acerola); font-weight: 500; flex: none; }
+  details[open] summary::after { content: "−"; }
+  details p { color: var(--suave); font-size: 15.5px; margin-top: 11px; line-height: 1.6; max-width: 72ch; }
+  summary:focus-visible { outline: 3px solid var(--acerola); outline-offset: 4px; border-radius: 4px; }
+
+  /* ---------- fechamento ---------- */
+  .fechamento {
+    background: var(--acerola); border-radius: 28px; padding: clamp(38px, 5.5vw, 64px);
+    text-align: center; display: flex; flex-direction: column; align-items: center; gap: 18px; color: #fff;
+  }
+  .fechamento h2 { color: #fff; max-width: 18ch; }
+  .fechamento .botao { background: #fff; color: var(--acerola-2); box-shadow: none; }
+  .fechamento .botao:hover { background: #FFE9EC; }
+  .fechamento .micro { color: rgba(255, 255, 255, .9); }
+
+  footer {
+    border-top: 1px solid var(--linha); padding: 32px 0 54px; margin-top: 60px;
+    display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap;
+    align-items: center; font-size: 13.5px; color: var(--suave);
+  }
+
+  .centro { display: flex; justify-content: center; margin-top: 32px; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  /* ---------- selo de prova social ---------- */
+  .prova-pilula {
+    display: inline-flex; align-items: center; gap: 12px;
+    background: #fff; border: 1px solid var(--linha);
+    border-radius: 999px; padding: 6px 20px 6px 7px;
+    box-shadow: var(--sombra);
+  }
+  .pilha-rostos { display: flex; align-items: center; }
+  .pilha-rostos img {
+    width: 34px; height: 34px; border-radius: 999px;
+    border: 2px solid #fff; object-fit: cover; flex: none;
+  }
+  .pilha-rostos img + img { margin-left: -12px; }
+  .prova-pilula > span:last-child { font-size: 14px; font-weight: 550; color: var(--tinta-2); white-space: nowrap; }
+  .prova-pilula b { font-weight: 700; }
+
+  /* ---------- depoimentos ---------- */
+  .depo {
+    /* figure vem com margin 1em 40px do navegador: sem zerar, o card encolhe
+       80px dentro da coluna e o texto quebra em linha demais */
+    margin: 0;
+    background: var(--papel); border: 1px solid var(--linha);
+    border-radius: var(--raio); padding: 24px;
+    display: flex; flex-direction: column; gap: 16px; box-shadow: var(--sombra);
+  }
+  .depo blockquote {
+    margin: 0; font-size: 15.5px; line-height: 1.6; color: var(--tinta-2);
+  }
+  .depo figcaption { display: flex; align-items: center; gap: 11px; margin-top: auto; }
+  .depo figcaption img {
+    width: 42px; height: 42px; border-radius: 999px; object-fit: cover; flex: none;
+  }
+  .depo-quem { display: flex; flex-direction: column; line-height: 1.3; }
+  .depo-nome { font-size: 14.5px; font-weight: 650; }
+  .depo-oque { font-size: 13px; color: var(--suave); }
+
+  /* ---------- heroi invertido: vermelho cheio, tudo branco em cima ---------- */
+  .faixa h1 { color: #fff; }
+  .faixa .conduz { color: rgba(255, 255, 255, .92); }
+  .faixa .micro { color: rgba(255, 255, 255, .82); }
+  /* na cor cheia o botao inverte: branco sobre vermelho puxa mais o olho */
+  .faixa .botao.grande {
+    background: #fff; color: var(--acerola-2);
+    box-shadow: 0 12px 28px -12px rgba(0, 0, 0, .45);
+  }
+  .faixa .botao.grande:hover { background: #FFE9EC; }
+  .faixa .botao.grande:focus-visible { outline-color: #fff; }
+  /* a pilula continua branca: vira o unico bloco claro do herói e ganha destaque */
+  .faixa .prova-pilula { border-color: transparent; box-shadow: 0 8px 24px -12px rgba(0,0,0,.4); }
+  .faixa .prova-pilula > span:last-child { color: var(--tinta); }
+
+  /* o card em destaque da comparacao fica branco com borda, sem o rosa velho */
+  .cartao.destaque { background: var(--papel); }
+
+  /* ---------- verde sai, vermelho entra ---------- */
+  .valor { color: var(--acerola); }          /* o "daria por mes" */
+  .g-barra { fill: var(--acerola); }         /* barras do RPM */
+  .g-col:hover .g-barra,
+  .g-col:focus-visible .g-barra { fill: var(--acerola-2); }
+
+  /* o carrossel sobe e invade o arco, entao o vermelho passa por tras dos cards */
+  .secao-esteira {
+    margin-top: clamp(-190px, -16vw, -110px);
+    position: relative;
+    z-index: 2;
+    padding-top: 0;
+  }
+
+  /* foco do grafico: sai a caixa azul do navegador, entra sinal dentro da barra.
+     Nao e so cor — a barra tambem ganha contorno, entao serve a quem nao distingue matiz. */
+  .g-col { outline: none; }
+  .g-col:focus { outline: none; }
+  .g-col:focus-visible { outline: none; }
+  .g-col:focus-visible .g-barra {
+    fill: var(--acerola-2);
+    stroke: var(--tinta); stroke-width: 2.5; paint-order: stroke;
+  }
+
+
+  /* etiquetas moram numa camada acima das barras; :has() liga cada uma a sua coluna */
+  .camada-dicas { pointer-events: none; }
+__GRAFICO_CSS__
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <g id="mk">
+      <path d="__FOLHA__" style="fill:var(--mk-folha)"/>
+      <path d="__TALO__" style="fill:none;stroke:var(--mk-folha);stroke-width:4.6;stroke-linecap:round"/>
+      <path d="__FRUTA__ __PLAY__" fill-rule="evenodd" style="fill:var(--mk-fruta)"/>
+    </g>
+    <g id="wm"><path d="__WORDMARK_D__" style="fill:var(--wm-cor)"/></g>
+    <path id="pl" d="M2 1.6 L9 6 L2 10.4 Z"/>
+  </defs>
+</svg>
+
+<nav>
+  <div class="nav-int">
+    <a class="marca-nav" href="#topo" aria-label="Acerolab, início">
+      <svg class="s" viewBox="__MARCA_VB__" style="--mk-fruta:var(--acerola);--mk-folha:var(--folha)"><use href="#mk"/></svg>
+      <svg class="w" viewBox="__WORDMARK_VB__" style="--wm-cor:var(--tinta)"><use href="#wm"/></svg>
+    </a>
+    <div class="nav-links">
+      <a href="#como">Como funciona</a>
+      <a href="#rende">Quanto rende</a>
+      <a href="#faq">Perguntas</a>
+    </div>
+    <div class="nav-acao">
+      <a class="botao" href="/entrar">Entrar</a>
+    </div>
+  </div>
+</nav>
+
+<div id="topo"></div>
+
+<div class="faixa">
+  <div class="capa">
+    <header class="heroi">
+      <span class="prova-pilula">
+        <span class="pilha-rostos">
+          <img src="__IMG_CNL1__" alt="" aria-hidden="true">
+          <img src="__IMG_CNL2__" alt="" aria-hidden="true">
+          <img src="__IMG_CNL3__" alt="" aria-hidden="true">
+          <img src="__IMG_CNL4__" alt="" aria-hidden="true">
+        </span>
+        <span><b>33,4 milhões</b> de visualizações geradas</span>
+      </span>
+      <h1>Seu canal posta todo dia. <br>Você nunca aparece.</h1>
+      <p class="conduz">Escolha o assunto uma vez. A partir daí a Acerolab escreve, narra, ilustra e monta &mdash; e de manhã tem vídeo novo esperando.</p>
+      <a class="botao grande" href="/entrar?aba=cadastrar">Montar minha primeira série</a>
+      <p class="micro">Do cadastro ao primeiro vídeo pronto: cinco minutos.</p>
+    </header>
+  </div>
+</div>
+
+<section class="secao-esteira">
+  <div class="esteira">
+    <div class="pista">
+      <div class="grupo">
+        <figure class="vertical" role="img" aria-label="Vídeo gerado por IA, 7,4 milhões de visualizações">
+          <video src="__VID_K_RATO__" autoplay muted loop playsinline preload="metadata" aria-hidden="true" tabindex="-1"></video>
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>7,4M</figcaption>
+        </figure>
+        <figure class="vertical" role="img" aria-label="Vídeo gerado por IA, 5,2 milhões de visualizações">
+          <video src="__VID_K_MENINA__" autoplay muted loop playsinline preload="metadata" aria-hidden="true" tabindex="-1"></video>
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>5,2M</figcaption>
+        </figure>
+        <figure class="vertical" role="img" aria-label="Vídeo gerado por IA, 2,1 milhões de visualizações">
+          <video src="__VID_K_FUTEBOL__" autoplay muted loop playsinline preload="metadata" aria-hidden="true" tabindex="-1"></video>
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>2,1M</figcaption>
+        </figure>
+        <figure class="vertical" role="img" aria-label="Vídeo gerado por IA, 1,4 milhão de visualizações">
+          <video src="__VID_K_MILAGRE__" autoplay muted loop playsinline preload="metadata" aria-hidden="true" tabindex="-1"></video>
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>1,4M</figcaption>
+        </figure>
+        <figure class="vertical" role="img" aria-label="Vídeo gerado por IA, 767 mil de visualizações">
+          <video src="__VID_K_MORAN__" autoplay muted loop playsinline preload="metadata" aria-hidden="true" tabindex="-1"></video>
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>767K</figcaption>
+        </figure>
+        <figure class="vertical" role="img" aria-label="Vídeo gerado por IA, 491 mil de visualizações">
+          <video src="__VID_K_PATINHO__" autoplay muted loop playsinline preload="metadata" aria-hidden="true" tabindex="-1"></video>
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>491K</figcaption>
+        </figure>
+      </div>
+      <div class="grupo" aria-hidden="true">
+        <figure class="vertical">
+          <video src="__VID_K_RATO__" autoplay muted loop playsinline preload="metadata" aria-hidden="true" tabindex="-1"></video>
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>7,4M</figcaption>
+        </figure>
+        <figure class="vertical">
+          <video src="__VID_K_MENINA__" autoplay muted loop playsinline preload="metadata" aria-hidden="true" tabindex="-1"></video>
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>5,2M</figcaption>
+        </figure>
+        <figure class="vertical">
+          <video src="__VID_K_FUTEBOL__" autoplay muted loop playsinline preload="metadata" aria-hidden="true" tabindex="-1"></video>
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>2,1M</figcaption>
+        </figure>
+        <figure class="vertical">
+          <video src="__VID_K_MILAGRE__" autoplay muted loop playsinline preload="metadata" aria-hidden="true" tabindex="-1"></video>
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>1,4M</figcaption>
+        </figure>
+        <figure class="vertical">
+          <video src="__VID_K_MORAN__" autoplay muted loop playsinline preload="metadata" aria-hidden="true" tabindex="-1"></video>
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>767K</figcaption>
+        </figure>
+        <figure class="vertical">
+          <video src="__VID_K_PATINHO__" autoplay muted loop playsinline preload="metadata" aria-hidden="true" tabindex="-1"></video>
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>491K</figcaption>
+        </figure>
+      </div>
+  </div>
+</section>
+
+<section style="background:var(--papel-2);border-block:1px solid var(--linha)">
+  <div class="capa">
+    <div class="cabeca" style="align-items:center;text-align:center">
+      <h2>Canais que rodam sem ninguém gravando</h2>
+      <p class="conduz" style="max-width:56ch">
+        Três canais nossos, no ar agora, em duas plataformas.
+        Cento e quarenta vídeos publicados no total &mdash; nenhum deles gravado,
+        filmado ou editado por alguém.
+      </p>
+    </div>
+
+    <div class="canais-dupla">
+    <a class="cartao-canal" href="https://www.tiktok.com/@footballcinematicstudio" target="_blank" rel="noopener noreferrer"
+       aria-label="Abrir o canal @footballcinematicstudio">
+      <div class="canal-topo">
+        <span class="canal-marca">
+          <svg viewBox="__MARCA_VB__" aria-hidden="true" style="--mk-fruta:var(--acerola);--mk-folha:var(--folha)"><use href="#mk"/></svg>
+        </span>
+        <span class="canal-id">
+          <span class="canal-onde">TikTok</span>
+          <span class="canal-nome">FootballAnimeStudio</span>
+          <span class="canal-arroba">@footballcinematicstudio</span>
+        </span>
+        <span class="canal-ver">Abrir &rarr;</span>
+      </div>
+      <div class="canal-tres">
+        <figure>
+          <img src="__IMG_CANAL1__" alt="Vídeo do canal com 2,1 milhões de visualizações" loading="lazy">
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>2,1M</figcaption>
+        </figure>
+        <figure>
+          <img src="__IMG_CANAL2__" alt="Vídeo do canal com 1,9 milhão de visualizações" loading="lazy">
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>1,9M</figcaption>
+        </figure>
+        <figure>
+          <img src="__IMG_CANAL3__" alt="Vídeo do canal com 1,9 milhão de visualizações" loading="lazy">
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>1,9M</figcaption>
+        </figure>
+      </div>
+      <div class="canal-numeros">
+        <div><strong>107</strong><span>vídeos publicados</span></div>
+        <div><strong>0</strong><span>gravações e edições</span></div>
+      </div>
+    </a>
+    <a class="cartao-canal" href="https://www.youtube.com/@AIStoryHub2.0-usa/shorts" target="_blank" rel="noopener noreferrer"
+       aria-label="Abrir o canal @AIStoryHub2.0-usa">
+      <div class="canal-topo">
+        <span class="canal-marca">
+          <svg viewBox="__MARCA_VB__" aria-hidden="true" style="--mk-fruta:var(--acerola);--mk-folha:var(--folha)"><use href="#mk"/></svg>
+        </span>
+        <span class="canal-id">
+          <span class="canal-onde">YouTube Shorts</span>
+          <span class="canal-nome">AI Story Hub</span>
+          <span class="canal-arroba">@AIStoryHub2.0-usa</span>
+        </span>
+        <span class="canal-ver">Abrir &rarr;</span>
+      </div>
+      <div class="canal-tres">
+        <figure>
+          <img src="__IMG_YT1__" alt="Vídeo do canal com 85 mil de visualizações" loading="lazy">
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>85K</figcaption>
+        </figure>
+        <figure>
+          <img src="__IMG_YT2__" alt="Vídeo do canal com 67 mil de visualizações" loading="lazy">
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>67K</figcaption>
+        </figure>
+        <figure>
+          <img src="__IMG_YT3__" alt="Vídeo do canal com 20 mil de visualizações" loading="lazy">
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>20K</figcaption>
+        </figure>
+      </div>
+      <div class="canal-numeros">
+        <div><strong>21</strong><span>shorts publicados</span></div>
+        <div><strong>0</strong><span>gravações e edições</span></div>
+      </div>
+    </a>
+    <a class="cartao-canal" href="https://www.youtube.com/@frutacity/shorts" target="_blank" rel="noopener noreferrer"
+       aria-label="Abrir o canal Fruta City">
+      <div class="canal-topo">
+        <span class="canal-marca">
+          <svg viewBox="__MARCA_VB__" aria-hidden="true" style="--mk-fruta:var(--acerola);--mk-folha:var(--folha)"><use href="#mk"/></svg>
+        </span>
+        <span class="canal-id">
+          <span class="canal-onde">YouTube Shorts</span>
+          <span class="canal-nome">Fruta City</span>
+          <span class="canal-arroba">@frutacity</span>
+        </span>
+        <span class="canal-ver">Abrir &rarr;</span>
+      </div>
+      <div class="canal-tres">
+        <figure>
+          <img src="__IMG_FC1__" alt="Vídeo do canal com 767 mil visualizações" loading="lazy">
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>767K</figcaption>
+        </figure>
+        <figure>
+          <img src="__IMG_FC2__" alt="Vídeo do canal com 55 mil visualizações" loading="lazy">
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>55K</figcaption>
+        </figure>
+        <figure>
+          <img src="__IMG_FC3__" alt="Vídeo do canal com 54 mil visualizações" loading="lazy">
+          <figcaption><svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>54K</figcaption>
+        </figure>
+      </div>
+      <div class="canal-numeros">
+        <div><strong>12</strong><span>shorts publicados</span></div>
+        <div><strong>0</strong><span>gravações e edições</span></div>
+      </div>
+    </a>
+    </div>
+  </div>
+</section>
+
+<section id="rende">
+  <div class="capa">
+    <div class="cabeca">
+      <p class="rotulo">Simulador</p>
+      <h2>Views viram quanto?</h2>
+      <p class="conduz">
+        As plataformas repassam por mil visualizações. Puxa os controles e roda a conta
+        com os números em que você acredita &mdash; não com os que alguém escolheu por você.
+      </p>
+    </div>
+
+    <div class="duo">
+      <a class="lado-video"
+         href="https://www.tiktok.com/@nighttimereels/video/7598802936356965687"
+         target="_blank" rel="noopener noreferrer"
+         aria-label="Abrir no TikTok o vídeo com 5,2 milhões de visualizações">
+        <video src="__VID_EXEMPLO__" poster="__IMG_POSTER__"
+               autoplay muted loop playsinline preload="metadata"
+               aria-hidden="true" tabindex="-1"></video>
+        <span class="selo-canto selo-views-v">
+          <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden="true"><use href="#pl"/></svg>5,2M
+        </span>
+        <span class="selo-canto selo-tiktok">Ver no TikTok</span>
+      </a>
+
+      <div class="lado-conta">
+        <div class="controles">
+          <div class="controle">
+            <div class="controle-topo">
+              <label for="views">Visualizações por mês</label>
+              <output id="saida-views" for="views">5,2 mi</output>
+            </div>
+            <input type="range" id="views" min="10" max="8000" step="10" value="5200" aria-describedby="dica-views">
+            <p class="dica" id="dica-views">Canal novo demora. Comece pensando em meses, não em semanas.</p>
+          </div>
+          <div class="controle">
+            <div class="controle-topo">
+              <label for="rpm">Repasse por mil views</label>
+              <output id="saida-rpm" for="rpm">US$ 1,00</output>
+            </div>
+            <input type="range" id="rpm" min="10" max="300" step="5" value="100" aria-describedby="dica-rpm">
+            <p class="dica" id="dica-rpm">Finanças paga mais que humor. Público dos EUA paga mais que do Brasil.</p>
+          </div>
+          <div class="controle">
+            <div class="controle-topo">
+              <label for="dolar">Dólar</label>
+              <output id="saida-dolar" for="dolar">R$ 5,00</output>
+            </div>
+            <input type="range" id="dolar" min="400" max="700" step="5" value="500">
+          </div>
+        </div>
+
+        <div class="resultado-caixa">
+          <p class="titulo-p">Daria por mês</p>
+          <p class="valor" id="resultado">R$ 26.000</p>
+          <p class="detalhe" id="detalhe">5,2 mi de views × US$ 1,00, com o dólar a R$ 5,00.</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="aviso">
+      Isso é aritmética, não previsão. O repasse muda conforme o nicho, o país de quem assiste e
+      o mês do ano &mdash; e a maior parte dos vídeos não estoura. Tem canal que nunca monetiza.
+    </p>
+  </div>
+</section>
+
+<section style="background:var(--papel-2);border-block:1px solid var(--linha)">
+  <div class="capa">
+    <div class="dois-lados">
+      <div class="cabeca" style="margin:0">
+        <p class="rotulo">De onde vem</p>
+        <h2>Quem paga, e por quê</h2>
+        <p class="conduz">
+          YouTube, TikTok e Facebook dividem receita de anúncio com quem publica. O apelido
+          desse repasse é RPM: o que entra a cada mil visualizações. Costuma ficar entre
+          cinquenta centavos de dólar e dois dólares, e balança bastante de um dia para o outro.
+        </p>
+        <p class="aviso" style="margin-top:4px">É esse número que manda na conta da seção anterior: dobrou o RPM, dobrou a receita.</p>
+      </div>
+      <figure class="cartao-rpm">
+        <span class="rpm-rotulo">RPM</span>
+        <span class="rpm-valor">US$ 1,18</span>
+        <span class="rpm-periodo">média de 1 a 10 de fevereiro de 2026</span>
+        __GRAFICO_RPM__
+        <figcaption class="rpm-nota">
+          Exemplo ilustrativo de como o repasse oscila de um dia para o outro.
+          Passe o mouse nas barras para ver cada dia.
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="capa">
+    <div class="grade g3">
+      <div class="cartao">
+        <h3>Pagar um editor</h3>
+        <p class="preco-linha ruim">R$ 100 a R$ 300 por vídeo</p>
+        <p>Você entra na fila da agenda de outra pessoa, negocia prazo e ainda paga o retrabalho. Trinta vídeos no mês passam de três mil reais.</p>
+      </div>
+      <div class="cartao">
+        <h3>Fazer na mão</h3>
+        <p class="preco-linha meio">Umas 2 horas por vídeo</p>
+        <p>Pesquisar, escrever, gravar voz, achar imagem, cortar, legendar, exportar, postar. Repete amanhã. E no domingo também.</p>
+      </div>
+      <div class="cartao destaque">
+        <h3>Acerolab</h3>
+        <p class="preco-linha bom">Centavos por vídeo</p>
+        <p>Você aprova. O resto chegou pronto.</p>
+      </div>
+    </div>
+    <div class="centro"><a class="botao grande" href="/entrar?aba=cadastrar">Montar minha primeira série</a></div>
+  </div>
+</section>
+
+<section id="como" style="background:var(--papel-2);border-block:1px solid var(--linha)">
+  <div class="capa">
+    <div class="cabeca">
+      <p class="rotulo">Como funciona</p>
+      <h2>Configura uma vez, esquece depois.</h2>
+    </div>
+    <div class="grade g3">
+      <div class="cartao">
+        <span class="passo-num">1</span>
+        <h3>Diga o assunto</h3>
+        <p>Nicho, voz, idioma, trilha e estilo visual. Se a lista não tiver o que você quer, escreve do seu jeito.</p>
+      </div>
+      <div class="cartao">
+        <span class="passo-num">2</span>
+        <h3>Dê o aval</h3>
+        <p>Chega com roteiro, narração, imagens e legenda no tempo certo. Não curtiu, manda refazer &mdash; crédito só some no que você aprovar.</p>
+      </div>
+      <div class="cartao">
+        <span class="passo-num">3</span>
+        <h3>Publique</h3>
+        <p>Baixa em 1080×1920 e sobe. Ou deixa a série no ritmo escolhido e nem abre o app.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="capa">
+    <div class="cabeca">
+      <p class="rotulo">Depoimentos</p>
+      <h2>Quem já está usando</h2>
+      <p class="conduz">
+        Três pessoas que trocaram horas de edição por um botão.
+      </p>
+    </div>
+    <div class="grade g3">
+      <!-- PREVIEW DE LAYOUT. Falas de roteiro publicitario lidas por ator,
+           nao depoimentos de cliente. Antes de publicar: trocar por depoimento
+           real, ou rotular como dramatizacao (CONAR art. 27 / CDC art. 37). -->
+      <figure class="depo">
+        <blockquote>“Eu tava perdendo muito tempo criando vídeo. Comecei a usar o Acerolab e basicamente ele faz os vídeos pra mim — eu coloco o que eu quero e já sai praticamente pronto pra postar. Hoje eu alimento Reels, Shorts e TikTok sem ficar horas editando.”</blockquote>
+        <figcaption>
+          <img src="__IMG_AV1__" alt="" aria-hidden="true">
+          <span class="depo-quem">
+            <span class="depo-nome">Rafael M.</span>
+            <span class="depo-oque">criador de conteúdo</span>
+          </span>
+        </figcaption>
+      </figure>
+      <figure class="depo">
+        <blockquote>“Não é só gravar: tem que pensar no conteúdo, editar, organizar tudo. Depois do Acerolab ficou muito mais fácil, ele cria praticamente sozinho.”</blockquote>
+        <figcaption>
+          <img src="__IMG_AV2__" alt="" aria-hidden="true">
+          <span class="depo-quem">
+            <span class="depo-nome">Patrícia L.</span>
+            <span class="depo-oque">canal dark</span>
+          </span>
+        </figcaption>
+      </figure>
+      <figure class="depo">
+        <blockquote>“Antes eu fazia um vídeo por vez e dava um trabalho absurdo. Agora eu crio vários praticamente no automático — Reels, Shorts, TikTok e as páginas do Facebook. Pra escalar conteúdo, facilitou demais.”</blockquote>
+        <figcaption>
+          <img src="__IMG_AV3__" alt="" aria-hidden="true">
+          <span class="depo-quem">
+            <span class="depo-nome">Diego S.</span>
+            <span class="depo-oque">gestor de páginas</span>
+          </span>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="faq" style="background:var(--papel-2);border-block:1px solid var(--linha)">
+  <div class="capa">
+    <div class="cabeca">
+      <p class="rotulo">Perguntas</p>
+      <h2>Antes que você pergunte.</h2>
+    </div>
+    <details open>
+      <summary>“Série” quer dizer o quê?</summary>
+      <p>É um assunto no piloto automático. Você trava nicho, voz e estilo uma vez, e aquilo passa a produzir sozinho no ritmo do plano. Como cada série puxa de um assunto só, cobrir dois temas diferentes pede duas séries &mdash; e elas rodam em paralelo, sem se atrapalhar.</p>
+    </details>
+    <details>
+      <summary>Dá quantos vídeos no mês?</summary>
+      <p>Depende do ritmo que você escolher pra série: de três por semana até três por dia. Precisa de mais volume? Some séries em vez de acelerar uma só.</p>
+    </details>
+    <details>
+      <summary>Vai sair tudo igual?</summary>
+      <p>Não. Cada vídeo parte de um roteiro escrito na hora e de imagens geradas na hora. Duas pessoas no mesmo nicho recebem coisas diferentes. Ainda assim, vale mexer no comando de tempos em tempos pra série não viciar num padrão.</p>
+    </details>
+    <details>
+      <summary>Preciso pôr a cara ou a voz?</summary>
+      <p>Nenhum dos dois. A narração é sintetizada e você escolhe timbre e idioma. Se quiser sua própria voz mesmo assim, dá pra subir o áudio.</p>
+    </details>
+    <details>
+      <summary>Consigo monetizar?</summary>
+      <p>Os arquivos são seus, limpos de marca d'água. Agora, quem decide se paga é a plataforma &mdash; e as regras dela mudam. Vale ler a política de conteúdo do YouTube e do TikTok antes de apostar tudo num canal só.</p>
+    </details>
+    <details>
+      <summary>E se eu quiser sair?</summary>
+      <p>Botão no painel, sem ligar pra ninguém e sem retenção. O que você já pagou roda até o fim do período; depois simplesmente não renova.</p>
+    </details>
+  </div>
+</section>
+
+<div class="capa" style="margin-top:clamp(50px,6.5vw,84px)">
+  <div class="fechamento">
+    <svg viewBox="__MARCA_VB__" aria-hidden="true" style="--mk-fruta:#fff;--mk-folha:#fff;width:52px"><use href="#mk"/></svg>
+    <h2>Amanhã cedo tem vídeo novo. Com ou sem você.</h2>
+    <a class="botao grande" href="/entrar?aba=cadastrar">Montar minha primeira série</a>
+    <p class="micro">Cancela sozinho, pelo painel, quando quiser.</p>
+  </div>
+</div>
+
+<div class="capa">
+  <footer>
+    <div style="display:flex;align-items:center;gap:9px">
+      <svg viewBox="__MARCA_VB__" aria-hidden="true" style="--mk-fruta:var(--acerola);--mk-folha:var(--folha);width:22px"><use href="#mk"/></svg>
+      <span>acerolab.com.br</span>
+    </div>
+    <span>Termos &middot; Privacidade &middot; Contato</span>
+  </footer>
+</div>
+
+<script>
+  (function () {
+    var views = document.getElementById("views");
+    var rpm = document.getElementById("rpm");
+    var dolar = document.getElementById("dolar");
+    var saidaViews = document.getElementById("saida-views");
+    var saidaRpm = document.getElementById("saida-rpm");
+    var saidaDolar = document.getElementById("saida-dolar");
+    var resultado = document.getElementById("resultado");
+    var detalhe = document.getElementById("detalhe");
+
+    var reais = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+    var dois = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    var inteiro = new Intl.NumberFormat("pt-BR");
+
+    function milhares(mil) {
+      if (mil >= 1000) return (mil / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " mi";
+      return inteiro.format(mil) + " mil";
+    }
+
+    function atualizar() {
+      var mil = Number(views.value);
+      var taxaRpm = Number(rpm.value) / 100;
+      var cambio = Number(dolar.value) / 100;
+      saidaViews.textContent = milhares(mil);
+      saidaRpm.textContent = "US$ " + dois.format(taxaRpm);
+      saidaDolar.textContent = "R$ " + dois.format(cambio);
+      resultado.textContent = reais.format(mil * taxaRpm * cambio);
+      detalhe.textContent = milhares(mil) + " de views × US$ " + dois.format(taxaRpm)
+        + " de RPM, com o dólar a R$ " + dois.format(cambio) + ".";
+    }
+
+    [views, rpm, dolar].forEach(function (c) { c.addEventListener("input", atualizar); });
+    atualizar();
+  })();
+</script>

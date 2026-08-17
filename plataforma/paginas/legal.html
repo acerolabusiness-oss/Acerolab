@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ doc.titulo }} · ACEROLAB</title>
+<link rel="stylesheet" href="/estatico/estilo.css">
+<link rel="icon" href="/estatico/acerola.svg" type="image/svg+xml">
+</head>
+<body>
+{# Página própria, sem a moldura do painel nem o mural da entrada: documento
+   é para ler, então tudo aqui serve à linha de texto. #}
+<article class="documento">
+  <a class="logo" href="/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="/estatico/marca/assinatura-branca.svg">
+      <img src="/estatico/marca/assinatura.svg" alt="ACEROLAB" style="height:30px">
+    </picture>
+  </a>
+
+  <h1>{{ doc.titulo }}</h1>
+  <p class="resumo">{{ doc.resumo }}</p>
+  <p class="data">Atualizado em {{ atualizado }}</p>
+
+  {% if not revisado %}
+  <div class="aviso">
+    <div>
+      <b>Minuta — ainda não revisada por advogado.</b>
+      <p>Este texto descreve com honestidade o que a plataforma faz, mas contrato de
+         consumo puxa Código de Defesa do Consumidor e LGPD. Precisa passar por um
+         advogado antes de a ACEROLAB cobrar do primeiro cliente.</p>
+    </div>
+  </div>
+  {% endif %}
+
+  {% for parte in doc.partes %}
+  <section>
+    <h2>{{ parte.titulo }}</h2>
+    {% for p in parte.paragrafos %}<p>{{ p }}</p>{% endfor %}
+  </section>
+  {% endfor %}
+
+  <p class="pe">
+    <a href="{{ '/privacidade' if doc.chave == 'termos' else '/termos' }}">{{ 'Ver a política de privacidade' if doc.chave == 'termos' else 'Ver os termos de uso' }}</a>
+    &nbsp;·&nbsp;
+    <a href="/entrar">Voltar para a plataforma</a>
+  </p>
+</article>
+</body>
+</html>

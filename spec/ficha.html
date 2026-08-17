@@ -1,0 +1,437 @@
+<title>Ficha Técnica ACEROLAB</title>
+
+<style>
+@font-face{font-family:'Archivo';font-style:normal;font-weight:600 800;font-display:block;src:url(__ARCHIVO__) format('woff2')}
+@font-face{font-family:'SourceSerif';font-style:normal;font-weight:200 900;font-display:block;src:url(__SERIF__) format('woff2')}
+
+:root{
+  --papel:#FFFFFF;
+  --painel:#F3F3F5;
+  --painel-fundo:#EAEAED;
+  --tinta:#17171A;
+  --tinta-2:#4A4A52;
+  --tinta-3:#7C7C86;
+  --regua:#E0E0E4;
+  --regua-forte:#C9C9CF;
+  --acerola:#D31C33;
+  --acerola-fraco:#FBE7EA;
+  --sombra:0 1px 2px rgba(20,20,25,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --papel:#121214;
+    --painel:#1A1A1D;
+    --painel-fundo:#202024;
+    --tinta:#F1F1F3;
+    --tinta-2:#B4B4BC;
+    --tinta-3:#84848E;
+    --regua:#2B2B31;
+    --regua-forte:#3C3C44;
+    --acerola:#FF4D62;
+    --acerola-fraco:#2A1418;
+    --sombra:0 1px 2px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --papel:#121214;
+  --painel:#1A1A1D;
+  --painel-fundo:#202024;
+  --tinta:#F1F1F3;
+  --tinta-2:#B4B4BC;
+  --tinta-3:#84848E;
+  --regua:#2B2B31;
+  --regua-forte:#3C3C44;
+  --acerola:#FF4D62;
+  --acerola-fraco:#2A1418;
+  --sombra:0 1px 2px rgba(0,0,0,.4);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--papel);
+  color:var(--tinta);
+  font-family:'SourceSerif',Georgia,serif;
+  font-size:17px;
+  line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+.folha{max-width:940px;margin:0 auto;padding:0 28px 120px}
+
+/* ---------- cabeçalho ---------- */
+.topo{
+  border-bottom:2px solid var(--tinta);
+  padding:56px 0 20px;
+  display:flex;flex-wrap:wrap;align-items:flex-end;gap:20px 32px;
+}
+.marca{display:flex;align-items:center;gap:12px;margin-right:auto}
+.fruta{width:34px;height:34px;flex:none}
+.nome{
+  font-family:'Archivo',system-ui,sans-serif;font-weight:800;
+  font-size:29px;letter-spacing:-.022em;line-height:1;
+}
+.nome i{font-style:normal;color:var(--acerola)}
+.carimbo{
+  font-family:'Archivo',system-ui,sans-serif;font-weight:700;
+  font-size:11px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--tinta-3);text-align:right;line-height:1.8;
+  font-variant-numeric:tabular-nums;
+}
+
+.tese{
+  font-size:25px;line-height:1.42;font-weight:400;
+  margin:38px 0 8px;max-width:33em;text-wrap:balance;
+}
+.tese b{font-weight:700;color:var(--acerola);}
+.sub{color:var(--tinta-2);max-width:36em;margin:0 0 8px}
+
+/* ---------- seções ---------- */
+section{margin-top:64px}
+h2{
+  font-family:'Archivo',system-ui,sans-serif;font-weight:700;
+  font-size:13px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--tinta);margin:0 0 6px;
+  padding-bottom:10px;border-bottom:1px solid var(--regua-forte);
+  display:flex;align-items:baseline;gap:12px;
+}
+h2 em{
+  font-style:normal;color:var(--tinta-3);font-weight:600;
+  letter-spacing:.06em;font-size:11px;margin-left:auto;text-transform:none;
+}
+.intro{color:var(--tinta-2);margin:16px 0 22px;max-width:36em}
+
+/* ---------- fichas de origem ---------- */
+.chip{
+  display:inline-block;vertical-align:2px;
+  font-family:'Archivo',system-ui,sans-serif;font-weight:700;
+  font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+  padding:3px 7px;border-radius:3px;white-space:nowrap;
+  border:1px solid var(--regua-forte);color:var(--tinta-3);background:transparent;
+}
+.chip.novo{background:var(--acerola);border-color:var(--acerola);color:#fff}
+.chip.base{background:var(--painel-fundo);border-color:transparent;color:var(--tinta-2)}
+
+/* ---------- tabela ---------- */
+.rolagem{overflow-x:auto;margin:0 -4px;padding:0 4px}
+table{border-collapse:collapse;width:100%;min-width:600px;font-size:16px}
+th{
+  font-family:'Archivo',system-ui,sans-serif;font-weight:700;
+  font-size:10px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--tinta-3);text-align:left;
+  padding:0 14px 9px 0;border-bottom:1px solid var(--regua);
+}
+td{padding:15px 14px 15px 0;border-bottom:1px solid var(--regua);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td:first-child{font-weight:600;width:34%}
+td.orig{width:96px;white-space:nowrap}
+td.nota{color:var(--tinta-2);font-size:15.5px;line-height:1.52}
+
+/* ---------- lacunas (o que ninguém faz) ---------- */
+.lacunas{list-style:none;padding:0;margin:0;display:grid;gap:2px}
+.lacunas li{
+  background:var(--painel);border-left:3px solid var(--acerola);
+  padding:20px 22px;border-radius:0 6px 6px 0;
+}
+.lacunas h3{
+  font-family:'Archivo',system-ui,sans-serif;font-weight:700;
+  font-size:16px;letter-spacing:-.005em;margin:0 0 6px;
+  display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+}
+.lacunas h3 span.peso{
+  font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--acerola);font-weight:700;
+}
+.lacunas p{margin:0;color:var(--tinta-2);font-size:15.5px;line-height:1.55}
+.lacunas p + p{margin-top:8px}
+
+/* ---------- básico ---------- */
+.basico{list-style:none;padding:0;margin:0;display:grid;gap:1px;background:var(--regua)}
+.basico li{background:var(--papel);padding:15px 0 15px 30px;position:relative}
+.basico li::before{
+  content:"";position:absolute;left:6px;top:25px;
+  width:9px;height:9px;border-radius:2px;background:var(--acerola);
+}
+.basico b{font-weight:700}
+.basico span{color:var(--tinta-2);display:block;font-size:15.5px;line-height:1.5;margin-top:2px}
+
+/* ---------- fases ---------- */
+.fases{counter-reset:fase;display:grid;gap:2px}
+.fase{
+  display:grid;grid-template-columns:64px 1fr;gap:0 20px;
+  background:var(--painel);padding:22px;border-radius:6px;align-items:start;
+}
+.fase .num{
+  counter-increment:fase;
+  font-family:'Archivo',system-ui,sans-serif;font-weight:800;
+  font-size:34px;line-height:.9;color:var(--regua-forte);
+  font-variant-numeric:tabular-nums;
+}
+.fase .num::before{content:counter(fase,decimal-leading-zero)}
+/* a fase em curso se marca com régua e numeral vermelhos — nada de fundo
+   rosado, que compete com o branco e suja o cinza */
+.fase.agora{border-left:3px solid var(--acerola);border-radius:0 6px 6px 0;padding-left:19px}
+.fase.agora .num{color:var(--acerola)}
+.fase h3{
+  font-family:'Archivo',system-ui,sans-serif;font-weight:700;
+  font-size:17px;margin:0 0 4px;letter-spacing:-.008em;
+}
+.fase .quando{
+  font-family:'Archivo',system-ui,sans-serif;font-weight:600;
+  font-size:10px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--tinta-3);margin:0 0 10px;
+}
+.fase p{margin:0;color:var(--tinta-2);font-size:15.5px;line-height:1.55}
+.fase p + p{margin-top:8px}
+
+/* ---------- travas ---------- */
+.travas{display:grid;gap:2px}
+.trava{
+  display:grid;grid-template-columns:1fr auto;gap:6px 24px;
+  padding:18px 20px;background:var(--painel);border-radius:6px;align-items:center;
+}
+.trava b{font-weight:700;font-family:'SourceSerif',serif}
+.trava .det{grid-column:1/-1;color:var(--tinta-2);font-size:15.5px;line-height:1.5}
+.prazo{
+  font-family:'Archivo',system-ui,sans-serif;font-weight:700;
+  font-size:11px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--acerola);white-space:nowrap;
+}
+
+/* ---------- números ---------- */
+.numeros{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:2px;margin-top:22px}
+.num-card{background:var(--painel);padding:20px;border-radius:6px}
+.num-card .v{
+  font-family:'Archivo',system-ui,sans-serif;font-weight:800;
+  font-size:30px;line-height:1;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;color:var(--acerola);
+}
+.num-card .r{
+  font-family:'Archivo',system-ui,sans-serif;font-weight:600;
+  font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--tinta-3);margin-top:9px;line-height:1.5;
+}
+
+.rodape{
+  margin-top:72px;padding-top:20px;border-top:1px solid var(--regua);
+  color:var(--tinta-3);font-size:14.5px;line-height:1.6;
+}
+
+@media (max-width:620px){
+  body{font-size:16px}
+  .folha{padding:0 18px 80px}
+  .tese{font-size:21px}
+  .fase{grid-template-columns:1fr;gap:6px}
+  .fase .num{font-size:24px}
+  .topo{padding-top:36px}
+  .carimbo{text-align:left}
+}
+</style>
+
+<div class="folha">
+
+  <header class="topo">
+    <div class="marca">
+      <svg class="fruta" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="58" r="38" fill="var(--acerola)"/>
+        <path d="M50 22 C50 10 58 4 70 3" stroke="var(--tinta)" stroke-width="5" fill="none" stroke-linecap="round"/>
+        <path d="M50 20 C36 12 24 16 20 26 C32 34 44 31 50 20Z" fill="var(--tinta)"/>
+        <path d="M50 30 C44 44 44 56 50 68" stroke="rgba(255,255,255,.34)" stroke-width="4" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="nome">ACEROLAB<i>.</i></div>
+    </div>
+    <div class="carimbo">
+      Ficha técnica do produto<br>
+      Versão 1 &middot; 15.08.2026<br>
+      Base: AutoShortz + ClipShort
+    </div>
+  </header>
+
+  <p class="tese">Pegar o que cada um faz melhor, fazer o básico sem falha, e entregar a única coisa que <b>nenhum dos dois entrega</b>: mostrar pro cliente se está dando dinheiro.</p>
+  <p class="sub">Levantado em 15/08/2026 percorrendo os dois produtos por dentro — os 6 passos do AutoShortz e os 6 da ClipShort, logado, tela por tela.</p>
+
+  <!-- =============== 1 =============== -->
+  <section>
+    <h2>De onde vem cada peça <em>AS = AutoShortz &nbsp;·&nbsp; CS = ClipShort</em></h2>
+    <p class="intro">Cada um ganha em metade do produto. O AutoShortz é melhor na <b>escolha</b> — miniatura no estilo, descrição de voz, estilo de legenda. A ClipShort é melhor na <b>entrega</b> — mais idiomas, prévia de áudio, contas conectadas e agendamento.</p>
+
+    <div class="rolagem">
+      <table>
+        <thead>
+          <tr><th>Peça</th><th>Vem de</th><th>Por quê</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>14 nichos + personalizado</td>
+            <td class="orig"><span class="chip">CS</span></td>
+            <td class="nota">O AutoShortz tem 8. Lista de nicho é texto — ampliar não custa nada e cobre mais gente na primeira tela.</td>
+          </tr>
+          <tr>
+            <td>7 idiomas</td>
+            <td class="orig"><span class="chip">CS</span></td>
+            <td class="nota">O AutoShortz só tem 3. Inglês e espanhol abrem canal com RPM muito acima do Brasil.</td>
+          </tr>
+          <tr>
+            <td>Voz com descrição de tom <i>e</i> botão play</td>
+            <td class="orig"><span class="chip">AS</span> <span class="chip">CS</span></td>
+            <td class="nota">O AutoShortz descreve o tom (“sussurrado, arrepia em terror”), a ClipShort deixa ouvir. Fazer os dois — descrever <i>e</i> tocar.</td>
+          </tr>
+          <tr>
+            <td>Música: play, gênero e sorteio por vídeo</td>
+            <td class="orig"><span class="chip">AS</span> <span class="chip">CS</span></td>
+            <td class="nota">A ClipShort rotula o gênero e deixa ouvir. O AutoShortz deixa escolher várias e sorteia uma a cada vídeo, o que evita a série ficar repetitiva.</td>
+          </tr>
+          <tr>
+            <td>9 estilos com miniatura real</td>
+            <td class="orig"><span class="chip">AS</span></td>
+            <td class="nota">A ClipShort mostra só o nome do estilo — “Expressionismo”, “Carvão”. Ninguém escolhe às cegas. É o erro mais barato de corrigir que eles têm.</td>
+          </tr>
+          <tr>
+            <td>Estilo de legenda, etapa própria</td>
+            <td class="orig"><span class="chip">AS</span></td>
+            <td class="nota">A ClipShort não tem. Legenda é o que segura retenção em short — merece escolha, não padrão único.</td>
+          </tr>
+          <tr>
+            <td>Duração 30–60s / 60–90s</td>
+            <td class="orig"><span class="chip">CS</span></td>
+            <td class="nota">Faixa mais larga que a do AutoShortz (30–40 / 60–70). Atenção: 90s quase triplica o custo de um vídeo de 30s.</td>
+          </tr>
+          <tr>
+            <td>Conectar TikTok e YouTube — opcional</td>
+            <td class="orig"><span class="chip">CS</span></td>
+            <td class="nota">“Você pode vincular suas contas depois.” É o que destrava o lançamento: o produto funciona sem OAuth aprovado.</td>
+          </tr>
+          <tr>
+            <td>Agendar horário, gerar 6h antes</td>
+            <td class="orig"><span class="chip">CS</span></td>
+            <td class="nota">Um cron com deslocamento de 6 horas, que abre janela pro cliente revisar e editar antes de ir ao ar. Simples e resolve.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- =============== 2 =============== -->
+  <section>
+    <h2>O que nenhum dos dois faz <em>é aqui que se sai na frente</em></h2>
+    <p class="intro">Cinco buracos que os dois deixam abertos. O primeiro vale mais que os outros quatro juntos.</p>
+
+    <ul class="lacunas">
+      <li>
+        <h3>Painel de desempenho <span class="peso">O maior buraco</span></h3>
+        <p>Views, retenção e receita por vídeo, puxados da API do YouTube e do TikTok. O cliente compra “canal dark monetizado” e hoje termina o mês <b>sem saber se funcionou</b> — os dois produtos entregam o arquivo e somem.</p>
+        <p>Usa a mesma autorização do agendamento, então o custo extra é pequeno. E resolve o problema de retenção de assinatura: quem vê número subindo não cancela.</p>
+      </li>
+      <li>
+        <h3>Prévia do roteiro antes de gerar <span class="peso">Corta custo</span></h3>
+        <p>Mostrar o título, as primeiras linhas e <b>três opções de gancho</b> — e só gastar imagem e narração depois do OK. Roteiro é texto: custa centavos. Imagem e voz é que custam.</p>
+        <p>Corta a refação, que é o custo invisível que nenhuma das duas tabelas contabiliza.</p>
+      </li>
+      <li>
+        <h3>Título, descrição e hashtags por plataforma</h3>
+        <p>Sai no mesmo roteiro, custa quase zero, e responde por boa parte do alcance de um short. Os dois entregam o MP4 e deixam o cliente inventar a legenda do post na mão.</p>
+      </li>
+      <li>
+        <h3>Pix no checkout</h3>
+        <p>O AutoShortz cobra por Stripe. No Brasil, Pix não é conveniência — é conversão. Cartão recusado é assinatura perdida antes do primeiro vídeo.</p>
+      </li>
+      <li>
+        <h3>Memória da série</h3>
+        <p>Não repetir tema já usado nem gancho já usado, e deixar o cliente ver o que a série já produziu. Nenhum dos dois mostra o histórico, e série de canal dark vive de não se repetir.</p>
+      </li>
+    </ul>
+  </section>
+
+  <!-- =============== 3 =============== -->
+  <section>
+    <h2>O básico bem feito <em>onde não pode falhar</em></h2>
+    <p class="intro">Nada aqui é diferencial. É o que faz o cliente ficar depois do primeiro mês — e o que quebra a confiança quando falha uma vez.</p>
+
+    <ul class="basico">
+      <li><b>Legenda sincronizada palavra a palavra.</b><span>Transcrição com carimbo de tempo por palavra, não por frase. É o que prende o olho nos primeiros segundos.</span></li>
+      <li><b>9:16 sem corte errado.</b><span>Enquadramento correto em toda cena — nada de cabeça cortada porque a imagem veio em outra proporção.</span></li>
+      <li><b>Sem marca d'água.</b><span>Os vídeos dos seus canais hoje saem com “Flashloop.AI” carimbado. Isso tem que morrer antes de qualquer venda.</span></li>
+      <li><b>Vídeo que falha não é cobrado e refaz sozinho.</b><span>Se quebra na metade, roteiro e narração já foram pagos por você. O cliente não pode nem perceber.</span></li>
+      <li><b>Geração rápida o bastante pra caber na janela de revisão.</b><span>Se você promete gerar 6h antes de publicar, tem que gerar em muito menos que 6h — com fila cheia.</span></li>
+      <li><b>Áudio nivelado.</b><span>Narração à frente, música de fundo a 10% com fade no fim. Trilha estourando a voz é o defeito mais comum desse tipo de vídeo.</span></li>
+    </ul>
+  </section>
+
+  <!-- =============== 4 =============== -->
+  <section>
+    <h2>Ordem de construção <em>o que depende do quê</em></h2>
+    <p class="intro">A ordem não é por importância — é por dependência. As fases 3 e 4 dependem de aprovação de terceiros, então o processo delas começa junto com a fase 1, mesmo sem código.</p>
+
+    <div class="fases">
+      <div class="fase agora">
+        <div class="num"></div>
+        <div>
+          <h3>Wizard + esteira + baixar</h3>
+          <p class="quando">Lançável sozinho &middot; sem depender de ninguém</p>
+          <p>Os 6 passos com o melhor dos dois, a esteira de produção e o botão de baixar o MP4. Sem contas conectadas, sem agendamento.</p>
+          <p>É exatamente o AutoShortz, feito melhor. Já dá pra vender.</p>
+        </div>
+      </div>
+      <div class="fase">
+        <div class="num"></div>
+        <div>
+          <h3>Prévia de roteiro, título/hashtags e Pix</h3>
+          <p class="quando">Barato &middot; diferencia desde o primeiro cliente</p>
+          <p>As três lacunas que não dependem de aprovação de plataforma nenhuma. Custam pouco e já colocam a ACEROLAB à frente dos dois.</p>
+        </div>
+      </div>
+      <div class="fase">
+        <div class="num"></div>
+        <div>
+          <h3>Contas conectadas e agendamento</h3>
+          <p class="quando">Trava em aprovação externa &middot; começar o processo hoje</p>
+          <p>OAuth do YouTube e do TikTok, publicação automática e o cron que gera 6h antes. O código é a parte fácil; a aprovação é que leva meses.</p>
+          <p>Até liberar, a etapa fica no wizard escrita como “em breve” — igual à ClipShort, que deixa vincular depois.</p>
+        </div>
+      </div>
+      <div class="fase">
+        <div class="num"></div>
+        <div>
+          <h3>Painel de desempenho</h3>
+          <p class="quando">Depende da fase 3 &middot; é o diferencial de verdade</p>
+          <p>Views, retenção e receita por vídeo. Só é possível depois que a conta estiver conectada — por isso vem por último, mesmo sendo o item de maior valor.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =============== 5 =============== -->
+  <section>
+    <h2>O que trava <em>resolver antes de prometer data</em></h2>
+
+    <div class="travas">
+      <div class="trava">
+        <b>Verificação do app no Google</b><span class="prazo">semanas a meses</span>
+        <div class="det">Subir vídeo usa um escopo sensível (<code>youtube.upload</code>). O Google exige verificação do app e avaliação de segurança antes de liberar pro público, e pode cobrar auditoria de terceiro.</div>
+      </div>
+      <div class="trava">
+        <b>Auditoria do TikTok</b><span class="prazo">bloqueia o auto-post</span>
+        <div class="det">Sem app auditado, a Content Posting API só manda o vídeo como <b>rascunho privado</b> — o cliente ainda precisa abrir o app e publicar na mão. Aí não é piloto automático.</div>
+      </div>
+      <div class="trava">
+        <b>Cota de upload do YouTube</b><span class="prazo">define quantos clientes cabem</span>
+        <div class="det">Cada upload consome cerca de 1.600 unidades e a cota padrão de um projeto é 10.000 por dia — algo em torno de 6 uploads diários <b>para o sistema inteiro</b>, não por cliente. Aumento só se pede com o app já verificado. Confirmar os números na documentação atual antes de prometer ritmo.</div>
+      </div>
+      <div class="trava">
+        <b>Custo real por vídeo ainda não medido</b><span class="prazo">decide o preço</span>
+        <div class="det">A esteira está pronta e instrumentada; faltam as chaves de API. Com postagem automática o vídeo é gerado sempre — assinante parado deixa de ser lucro e passa a ser despesa.</div>
+      </div>
+    </div>
+
+    <div class="numeros">
+      <div class="num-card"><div class="v">R$ 0,50</div><div class="r">Teto de custo por vídeo<br>plano Ultra mensal</div></div>
+      <div class="num-card"><div class="v">R$ 0,38</div><div class="r">Teto no Ultra anual<br>o número que manda</div></div>
+      <div class="num-card"><div class="v">20%</div><div class="r">Royalty da franquia<br>sobre o faturamento</div></div>
+      <div class="num-card"><div class="v">33,4M</div><div class="r">Views nos seus canais<br>a prova que já existe</div></div>
+    </div>
+  </section>
+
+  <p class="rodape">
+    Levantamento feito em 15/08/2026 navegando os dois produtos logado, tela por tela — nenhuma série foi criada em nenhuma das duas contas. Os tetos de custo por vídeo descontam os 20% de royalty, ~5% de gateway e ~10% de imposto sobre o preço de tabela do AutoShortz. Os limites de cota e os prazos de aprovação do Google e do TikTok mudam com frequência: confirmar na documentação oficial antes de virar compromisso com cliente.
+  </p>
+
+</div>
