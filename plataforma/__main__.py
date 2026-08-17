@@ -21,7 +21,11 @@ def main() -> int:
 
     uvicorn.run("plataforma.app:app",
                 host="0.0.0.0" if args.publico or os.environ.get("RAILWAY_ENVIRONMENT") else "127.0.0.1",
-                port=args.porta, reload=args.recarregar)
+                port=args.porta, reload=args.recarregar,
+                # O Railway termina o TLS na borda e encaminha por HTTP puro pro
+                # container: sem isto, request.url.scheme sempre vem "http" e a
+                # URL de volta do login com Google fica errada.
+                proxy_headers=True, forwarded_allow_ips="*")
     return 0
 
 
