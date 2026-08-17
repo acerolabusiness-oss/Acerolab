@@ -134,17 +134,18 @@ def _com_sessao(destino: str, usuario_id: int,
 @app.post("/entrar")
 def entrar(request: Request, email: str = Form(...), senha: str = Form(...)):
     with aberto() as con:
+        novo = False
         try:
             if supabase.configurado():
                 try:
-                    usuario_id = contas.vincular(con, supabase.entrar(email, senha))
+                    usuario_id, novo = contas.vincular(con, supabase.entrar(email, senha))
                 except supabase.Recusado:
                     usuario_id = contas.autenticar(con, email, senha)
             else:
                 usuario_id = contas.autenticar(con, email, senha)
         except (contas.Recusado, supabase.Recusado) as erro:
             return tela(request, "entrar.html", aba="entrar", erro=str(erro), email=email)
-    return _com_sessao("/series", usuario_id, request)
+    return _com_sessao("/comecar" if novo else "/series", usuario_id, request)
 
 
 @app.post("/cadastrar")
@@ -167,13 +168,13 @@ def cadastrar(request: Request, email: str = Form(...), senha: str = Form(...),
                                 recado="Conta criada. Abra o e-mail que acabamos de "
                                        "enviar e clique no link para confirmar — "
                                        "depois é só entrar aqui.")
-                usuario_id = contas.vincular(con, pessoa)
+                usuario_id, _ = contas.vincular(con, pessoa)
             else:
                 usuario_id = contas.cadastrar(con, email, senha, nome)
         except (contas.Recusado, supabase.Recusado) as erro:
             return tela(request, "entrar.html", aba="cadastrar", erro=str(erro),
                         email=email, nome=nome)
-    return _com_sessao("/series/nova", usuario_id, request)
+    return _com_sessao("/comecar", usuario_id, request)
 
 
 # ─────────────────────── entrar com o Google ─────────────────────────
@@ -213,11 +214,11 @@ def entrar_retorno(request: Request, code: str = "", error_description: str = ""
     try:
         pessoa = supabase.trocar_codigo(code, verificador)
         with aberto() as con:
-            usuario_id = contas.vincular(con, pessoa)
+            usuario_id, novo = contas.vincular(con, pessoa)
     except (contas.Recusado, supabase.Recusado) as erro:
         return RedirectResponse("/entrar?erro=" + quote(str(erro)[:200]), status_code=303)
 
-    resposta = _com_sessao("/series", usuario_id, request)
+    resposta = _com_sessao("/comecar" if novo else "/series", usuario_id, request)
     resposta.delete_cookie(VERIFICADOR, path="/entrar")
     return resposta
 
@@ -382,6 +383,13 @@ def sair(request: Request):
     resposta = RedirectResponse("/entrar", status_code=303)
     resposta.delete_cookie(contas.COOKIE)
     return resposta
+
+
+# ───────────────────────────── começo ────────────────────────────────
+
+@app.get("/comecar", response_class=HTMLResponse)
+def comecar(request: Request, usuario=Depends(exigir)):
+    return tela(request, "comecar.html")
 
 
 # ───────────────────────────── séries ────────────────────────────────

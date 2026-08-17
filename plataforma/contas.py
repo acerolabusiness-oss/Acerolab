@@ -69,12 +69,13 @@ def cadastrar(con: sqlite3.Connection, email: str, senha: str, nome: str = "") -
     )
 
 
-def vincular(con: sqlite3.Connection, pessoa: dict[str, str]) -> int:
+def vincular(con: sqlite3.Connection, pessoa: dict[str, str]) -> tuple[int, bool]:
     """Casa quem veio do provedor com o cadastro daqui, pelo e-mail.
 
     Se a pessoa já tinha conta por senha e agora entrou pelo Google, o mesmo
     e-mail leva ao mesmo cadastro — em vez de criar uma conta paralela que
-    não enxerga as séries dela.
+    não enxerga as séries dela. O segundo item devolvido diz se a conta
+    acabou de nascer aqui (para saber se mostra o começo ou vai direto).
     """
     email = (pessoa.get("email") or "").strip()
     if not email:
@@ -88,14 +89,15 @@ def vincular(con: sqlite3.Connection, pessoa: dict[str, str]) -> int:
         if pessoa.get("nome") and not linha["nome"]:
             con.execute("UPDATE usuarios SET nome = ? WHERE id = ?",
                         (pessoa["nome"], linha["id"]))
-        return int(linha["id"])
+        return int(linha["id"]), False
 
-    return inserir(
+    novo_id = inserir(
         con,
         """INSERT INTO usuarios (email, senha, nome, supabase_id, criado_em)
            VALUES (?,'',?,?,?)""",
         email, pessoa.get("nome", ""), pessoa.get("id", ""), agora(),
     )
+    return novo_id, True
 
 
 def autenticar(con: sqlite3.Connection, email: str, senha: str) -> int:

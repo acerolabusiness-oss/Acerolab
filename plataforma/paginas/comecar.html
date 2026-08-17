@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titulo %}Bem-vindo — ACEROLAB{% endblock %}
+
+{% block corpo %}
+{% set primeiro_nome = usuario['nome'].split(' ')[0] if usuario['nome'] else usuario['email'].split('@')[0] %}
+<h1>Bem-vindo(a) à ACEROLAB, {{ primeiro_nome }}.</h1>
+<p class="legenda-topo">Antes de criar sua primeira série, veja rapidinho como funciona — leva menos de um minuto.</p>
+
+<div class="grade dois" style="margin-bottom:28px">
+  <div class="cartao">
+    <div class="selo viva" style="margin-bottom:10px">1</div>
+    <h2 style="font-size:16px;margin:0 0 6px">Monte uma série</h2>
+    <p style="margin:0;color:var(--tinta-2)">Escolha o nicho, a voz e o estilo visual. É a série que define como seus vídeos vão soar e parecer — uma vez só.</p>
+  </div>
+  <div class="cartao">
+    <div class="selo viva" style="margin-bottom:10px">2</div>
+    <h2 style="font-size:16px;margin:0 0 6px">Aprove as pautas</h2>
+    <p style="margin:0;color:var(--tinta-2)">A cada dia a série propõe temas novos. Nada é gerado até você mandar — você decide o que vira vídeo.</p>
+  </div>
+  <div class="cartao">
+    <div class="selo viva" style="margin-bottom:10px">3</div>
+    <h2 style="font-size:16px;margin:0 0 6px">Baixe e publique</h2>
+    <p style="margin:0;color:var(--tinta-2)">O vídeo pronto fica em Vídeos, com legenda e tudo. É só baixar e postar nas suas redes.</p>
+  </div>
+</div>
+
+<div style="display:flex;gap:12px;flex-wrap:wrap">
+  <a class="botao" href="/series/nova">Criar minha primeira série</a>
+  <a class="botao calmo" href="/series">Pular, ver o painel</a>
+</div>
+{% endblock %}
