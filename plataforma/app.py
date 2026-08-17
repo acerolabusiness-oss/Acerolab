@@ -405,7 +405,21 @@ def admin_painel(request: Request, usuario=Depends(exigir)):
         return tela(request, "admin.html",
                     resumo=admin.resumo(con),
                     cadastros=admin.cadastros_por_dia(con),
-                    usuarios=admin.usuarios_com_uso(con))
+                    usuarios=admin.usuarios_com_uso(con),
+                    fila=admin.fila_saude(con),
+                    erros=admin.erros_recentes(con),
+                    assinaturas=admin.assinaturas_resumo(con))
+
+
+@app.get("/admin/usuarios/{usuario_id}", response_class=HTMLResponse)
+def admin_usuario(request: Request, usuario_id: int, usuario=Depends(exigir)):
+    if not admin.eh_admin(usuario):
+        raise HTTPException(status_code=404)
+    with aberto() as con:
+        detalhe = admin.usuario_detalhe(con, usuario_id)
+        if detalhe is None:
+            raise HTTPException(status_code=404)
+        return tela(request, "admin_usuario.html", **detalhe)
 
 
 # ───────────────────────────── séries ────────────────────────────────

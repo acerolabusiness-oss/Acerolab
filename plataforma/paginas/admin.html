@@ -28,6 +28,59 @@
   </div>
 </div>
 
+<div class="grade dois" style="grid-template-columns:1.3fr 1fr;margin-bottom:28px;align-items:start">
+  <div class="cartao">
+    <h2 style="font-size:16px;margin:0 0 16px">Saúde da geração</h2>
+    <div class="grade dois" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr));margin-bottom:16px">
+      <div>
+        <div class="selo" style="margin-bottom:6px">Na fila</div>
+        <div style="font-size:20px;font-weight:700" class="num">{{ fila.na_fila }}</div>
+      </div>
+      <div>
+        <div class="selo {{ 'ruim' if fila.taxa_falha > 0.1 else 'ok' }}" style="margin-bottom:6px">Taxa de falha</div>
+        <div style="font-size:20px;font-weight:700" class="num">{{ (fila.taxa_falha * 100)|round(1) }}%</div>
+      </div>
+      <div>
+        <div class="selo" style="margin-bottom:6px">Custo médio</div>
+        <div style="font-size:20px;font-weight:700" class="num">{{ fila.custo_medio|moeda }}</div>
+      </div>
+      <div>
+        <div class="selo" style="margin-bottom:6px">Tempo médio</div>
+        <div style="font-size:20px;font-weight:700" class="num">{{ (fila.segundos_medios / 60)|round(1) }} min</div>
+      </div>
+    </div>
+    {% if erros %}
+    <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--tinta-3);margin:16px 0 8px">Erros recentes</h3>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      {% for e in erros %}
+      <div style="font-size:13.5px;border-left:2px solid var(--acerola);padding-left:10px">
+        <div style="color:var(--tinta-2)">{{ e['email'] }} · {{ e['criado_em'][:16] }}</div>
+        <div>{{ e['erro'][:140] }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="cartao">
+    <h2 style="font-size:16px;margin:0 0 16px">Assinaturas</h2>
+    {% if assinaturas.por_plano_estado %}
+    <table>
+      <tr><th>Plano</th><th>Estado</th><th class="num">Contas</th></tr>
+      {% for a in assinaturas.por_plano_estado %}
+      <tr>
+        <td>{{ a.plano }}</td>
+        <td>{{ a.estado }}</td>
+        <td class="num">{{ a.c }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <p style="margin:0;color:var(--tinta-2);font-size:13.5px">Nenhuma assinatura ainda.</p>
+    {% endif %}
+  </div>
+</div>
+
 <div class="cartao" style="margin-bottom:28px">
   <h2 style="font-size:16px;margin:0 0 4px">Cadastros — últimos 30 dias</h2>
   <p style="margin:0 0 18px;color:var(--tinta-2);font-size:13.5px">
@@ -60,7 +113,7 @@
         <th>Cadastrado em</th>
       </tr>
       {% for u in usuarios %}
-      <tr>
+      <tr style="cursor:pointer" onclick="location.href='/admin/usuarios/{{ u['id'] }}'">
         <td>{{ u['email'] }}</td>
         <td>{{ u['nome'] or '—' }}</td>
         <td>{{ 'Google' if not u['senha'] else 'E-mail e senha' }}</td>

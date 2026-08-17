@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block titulo %}{{ pessoa['email'] }} — Admin — ACEROLAB{% endblock %}
+
+{% block corpo %}
+<p class="trilha"><a href="/admin">Admin</a> / {{ pessoa['email'] }}</p>
+<h1>{{ pessoa['nome'] or pessoa['email'] }}</h1>
+<p class="legenda-topo">
+  {{ pessoa['email'] }} ·
+  {{ 'Entra pelo Google' if not pessoa['senha'] else 'Entra por e-mail e senha' }} ·
+  cadastrado em {{ pessoa['criado_em'][:16] }}
+</p>
+
+<div class="cartao" style="margin-bottom:28px">
+  <h2 style="font-size:16px;margin:0 0 16px">Assinatura</h2>
+  {% if assinaturas %}
+  <table>
+    <tr><th>Plano</th><th>Estado</th><th>Renova em</th><th>Desde</th></tr>
+    {% for a in assinaturas %}
+    <tr>
+      <td>{{ a['plano'] }}</td>
+      <td>{{ a['estado'] }}</td>
+      <td>{{ a['renova_em'][:10] if a['renova_em'] else '—' }}</td>
+      <td>{{ a['criada_em'][:10] }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p style="margin:0;color:var(--tinta-2);font-size:13.5px">Sem assinatura.</p>
+  {% endif %}
+</div>
+
+<div class="cartao" style="margin-bottom:28px">
+  <h2 style="font-size:16px;margin:0 0 16px">Séries ({{ series|length }})</h2>
+  {% if series %}
+  <table>
+    <tr><th>Nome</th><th>Nicho</th><th class="num">Pautas</th><th class="num">Vídeos prontos</th><th>Criada em</th></tr>
+    {% for s in series %}
+    <tr>
+      <td>{{ s['nome'] }}{{ ' (arquivada)' if s['arquivada'] }}</td>
+      <td>{{ s['nicho'] }}</td>
+      <td class="num">{{ s['n_pautas'] }}</td>
+      <td class="num">{{ s['n_videos'] }}</td>
+      <td>{{ s['criada_em'][:10] }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p style="margin:0;color:var(--tinta-2);font-size:13.5px">Nenhuma série ainda.</p>
+  {% endif %}
+</div>
+
+<div class="cartao">
+  <h2 style="font-size:16px;margin:0 0 16px">Últimos vídeos ({{ videos|length }})</h2>
+  {% if videos %}
+  <div class="rolagem">
+    <table>
+      <tr><th>Série</th><th>Título</th><th>Estado</th><th class="num">Custo</th><th>Criado em</th></tr>
+      {% for v in videos %}
+      <tr>
+        <td>{{ v['serie_nome'] }}</td>
+        <td>{{ v['titulo'] or '—' }}</td>
+        <td>
+          <span class="selo {{ {'pronto':'ok','falhou':'ruim'}.get(v['estado'], '') }}">{{ v['estado'] }}</span>
+          {% if v['erro'] %}<div style="color:var(--tinta-3);font-size:12px;margin-top:2px">{{ v['erro'][:100] }}</div>{% endif %}
+        </td>
+        <td class="num">{{ v['custo_reais']|moeda }}</td>
+        <td>{{ v['criado_em'][:16] }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% else %}
+  <p style="margin:0;color:var(--tinta-2);font-size:13.5px">Nenhum vídeo ainda.</p>
+  {% endif %}
+</div>
+{% endblock %}
