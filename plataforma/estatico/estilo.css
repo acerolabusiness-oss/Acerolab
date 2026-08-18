@@ -162,22 +162,19 @@ input:focus,select:focus{outline:2px solid var(--acerola);outline-offset:-1px;bo
   align-items:center;gap:8px;flex-wrap:wrap}
 .escolha p{margin:0;color:var(--tinta-2);font-size:13.5px;line-height:1.45}
 
-/* nicho se escolhe primeiro com o olho, depois com o texto */
-.nichos-visuais{grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:12px}
-.escolha.nicho-visual{padding:0;overflow:hidden;display:flex;flex-direction:column}
-.nicho-capa,.nicho-livre{display:block;width:100%;aspect-ratio:16/9;background:var(--painel-2)}
-.nicho-capa{object-fit:cover;transition:transform .35s ease,filter .2s ease}
-.nicho-visual:hover .nicho-capa{transform:scale(1.035)}
-.nicho-visual:has(input:checked) .nicho-capa{filter:saturate(1.12) contrast(1.04)}
-.nicho-conteudo{display:block;padding:14px 16px 16px;flex:1}
-.nicho-livre{display:grid;place-items:center;align-content:center;gap:2px;
-  background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.13),transparent 32%),
-             linear-gradient(145deg,#19191d,#34343b);color:#fff}
-.nicho-livre b{font:300 48px/1 'Outfit',sans-serif;color:var(--acerola)}
-.nicho-livre small{font:700 9px 'Outfit',sans-serif;text-transform:uppercase;
-  letter-spacing:.14em;color:rgba(255,255,255,.55)}
+/* O assunto é uma decisão rápida: texto compacto, sem imagens competindo. */
+.nichos-texto{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:9px}
+.escolha.nicho-texto{min-height:82px;display:flex;align-items:center}
+.nicho-conteudo{display:block;min-width:0;width:100%}
+.nicho-personalizado{grid-column:1/-1;max-width:650px}
+.nicho-personalizado .nicho-conteudo{display:grid;grid-template-columns:minmax(130px,.45fr) minmax(220px,1fr);
+  column-gap:16px;align-items:center}
+.nicho-personalizado h3,.nicho-personalizado p{grid-column:1}
+.nicho-personalizado input[type=text]{grid-column:2;grid-row:1/3;margin:0 !important}
 
-/* miniatura do estilo visual — o que a ClipShort não tem */
+/* O visual volta a ser a decisão grande: cards altos e fáceis de comparar. */
+.estilos-visuais{grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.dica-arraste{display:none}
 .escolha.visual{padding:0;overflow:hidden}
 .escolha.visual .mini{aspect-ratio:9/14;background:var(--painel-2);display:block;
   width:100%;object-fit:cover}
@@ -274,6 +271,23 @@ input:focus,select:focus{outline:2px solid var(--acerola);outline-offset:-1px;bo
 
 .navegar{display:flex;justify-content:space-between;gap:12px;margin-top:30px;
   padding-top:22px;border-top:1px solid var(--regua)}
+.navegar:has(#voltar[hidden]){justify-content:flex-end}
+.nome-serie{max-width:520px}
+.nome-serie small{color:var(--tinta-3);font-weight:500}
+.titulo-escolha{font-size:16px;margin:24px 0 9px}
+.duracoes-simples{max-width:680px}
+.piloto-simples{margin-top:24px;padding:20px;border:1px solid var(--regua);border-radius:14px;
+  background:var(--painel)}
+.piloto-simples-cabeca h2{font-size:20px;margin:8px 0 12px}
+.piloto-opcoes{grid-template-columns:repeat(2,minmax(0,1fr))}
+.frequencia-piloto{max-width:320px;margin:14px 0 0 !important}
+.automatico-resumo{display:flex;gap:13px;align-items:flex-start;margin-top:16px;padding:15px 17px;
+  border-radius:12px;background:color-mix(in srgb,var(--acerola) 7%,var(--papel));
+  border:1px solid color-mix(in srgb,var(--acerola) 20%,var(--regua))}
+.automatico-resumo>span{width:34px;height:34px;display:grid;place-items:center;border-radius:50%;
+  flex:none;background:var(--acerola);color:#fff}
+.automatico-resumo b{font-size:14px}.automatico-resumo p{margin:3px 0 0;color:var(--tinta-2);
+  font-size:13px;line-height:1.45}
 
 /* ───────────── pautas e vídeos ───────────── */
 .pauta{display:flex;gap:16px;align-items:flex-start;background:var(--papel);
@@ -1027,20 +1041,31 @@ input[aria-invalid]:focus{outline-color:var(--acerola)}
   .entrega-viral-icone{width:42px;height:42px}.entrega-viral-acoes{grid-column:1/-1;width:100%}
   .entrega-viral-acoes .botao{width:100%}
   .fala{font-size:13px}.batida-meta > span:not(.energia){font-size:8px}
-  /* Duas miniaturas compactas também nos celulares estreitos. Uma coluna
-     fazia cada capa parecer uma foto ampliada em vez de uma opção da grade. */
-  .nichos-visuais{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-  .nicho-conteudo{padding:9px 10px 11px}
-  .nicho-conteudo h3{font-size:13.5px;gap:4px}
-  .nicho-conteudo .selo{font-size:8px;padding:2px 5px}
-  .nicho-conteudo p{font-size:11.5px;line-height:1.35;display:-webkit-box;
-    -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  .estilos-visuais{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .nichos-texto{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .escolha.nicho-texto{min-height:62px;padding:12px}
+  .nicho-texto h3{font-size:13.5px;margin:0;gap:4px}
+  .nicho-texto .selo{font-size:7.5px;padding:2px 4px}
+  .nicho-texto p{display:none}
+  .nicho-personalizado{grid-column:1/-1;max-width:none}
+  .nicho-personalizado .nicho-conteudo{display:block}
+  .nicho-personalizado p{display:block;margin-top:2px}
+  .nicho-personalizado input[type=text]{margin-top:8px !important}
+  .dica-arraste{display:flex;align-items:center;justify-content:space-between;margin:-4px 0 9px;
+    color:var(--acerola);font:700 11px 'Outfit',sans-serif;letter-spacing:.05em;text-transform:uppercase}
+  .estilos-visuais{grid-template-columns:none;grid-auto-flow:column;
+    grid-auto-columns:min(76vw,292px);overflow-x:auto;overscroll-behavior-inline:contain;
+    scroll-snap-type:x mandatory;gap:12px;padding:2px 24px 12px 2px;margin-right:-14px;
+    scrollbar-width:thin;scrollbar-color:var(--acerola) var(--painel)}
+  .escolha.visual{scroll-snap-align:start}
+  .piloto-simples{padding:15px}.piloto-opcoes{grid-template-columns:1fr}
+  .navegar{position:sticky;z-index:20;bottom:0;margin:24px -14px -28px;padding:13px 14px;
+    background:color-mix(in srgb,var(--fundo) 90%,transparent);backdrop-filter:blur(12px)}
   .prateleira{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .vazio-com-imagens{grid-template-columns:1fr}.vazio-mosaico{min-height:230px}
   .vazio-com-imagens > div:last-child{padding:28px}
 }
 @media (max-width:360px){
   .conteudo{padding-left:10px;padding-right:10px}
-  .nichos-visuais{gap:6px}
+  .nichos-texto{gap:6px}
+  .navegar{margin-left:-10px;margin-right:-10px;padding-left:10px;padding-right:10px}
 }

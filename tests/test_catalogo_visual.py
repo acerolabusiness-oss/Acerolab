@@ -24,19 +24,17 @@ class CatalogoVisualTest(unittest.TestCase):
         self.assertEqual(len(ids), 6)
         self.assertEqual(len(set(ids)), len(ids))
 
-    def test_grade_mobile_nao_amplia_capas_nem_controles(self) -> None:
+    def test_wizard_mobile_usa_nichos_compactos_e_carrossel_visual(self) -> None:
         css = (RAIZ / "plataforma" / "estatico" / "estilo.css").read_text()
 
         self.assertIn(
-            ".nichos-visuais{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}",
+            ".nichos-texto{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}",
             css,
         )
+        self.assertIn("grid-auto-columns:min(76vw,292px)", css)
+        self.assertIn("scroll-snap-type:x mandatory", css)
         self.assertIn(
             "input[type=text],input[type=email],input[type=password],select,textarea{font-size:16px}",
-            css,
-        )
-        self.assertNotIn(
-            "@media (max-width:460px){.nichos-visuais{grid-template-columns:1fr}}",
             css,
         )
 
@@ -89,13 +87,16 @@ class CatalogoVisualTest(unittest.TestCase):
             self.assertTrue(plataforma_som.url_ouvir.startswith("https://"))
             self.assertTrue(plataforma_som.rotulo_ouvir)
 
-    def test_wizard_explica_que_som_viral_nao_e_embutido(self) -> None:
+    def test_wizard_simplifica_inicio_e_conserva_padrao_automatico(self) -> None:
         html = (RAIZ / "plataforma" / "paginas" / "wizard.html").read_text()
 
-        self.assertIn("Som viral da plataforma", html)
-        self.assertIn("O áudio viral não é embutido no arquivo", html)
-        self.assertIn('data-audio-painel="viral"', html)
-        self.assertIn("ouvir-plataforma", html)
+        self.assertEqual(html.count("<section data-passo hidden>"), 4)
+        self.assertNotIn('class="nicho-capa"', html)
+        self.assertNotIn("Estratégia de áudio", html)
+        self.assertIn('name="modo_musica" value="biblioteca"', html)
+        self.assertIn('name="modo" value="automatico"', html)
+        self.assertIn("Você pode mudar tudo depois na central da série", html)
+        self.assertIn("dica-arraste", html)
         self.assertIn("if (document.hidden) pararAtual()", html)
         self.assertIn("window.addEventListener('pagehide', pararAtual)", html)
 

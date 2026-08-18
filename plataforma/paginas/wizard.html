@@ -6,35 +6,37 @@
 <p class="trilha"><a href="/series">Séries</a> › Criar nova série</p>
 
 <div class="passos" id="passos">
-  {% for _ in range(8) %}<i></i>{% endfor %}
+  {% for _ in range(4) %}<i></i>{% endfor %}
 </div>
 
 <form method="post" action="/series/nova" id="wizard">
+<input type="hidden" name="modo_musica" value="biblioteca">
+<input type="hidden" name="plataforma_musica" value="tiktok">
+<input type="hidden" name="modo" value="automatico">
+<input type="hidden" name="modelo_video" value="wan">
+<input type="hidden" name="legenda" value="{{ cat.LEGENDAS[0].chave }}">
+{% for m in musicas %}{% if m.destaque %}<input type="hidden" name="musicas" value="{{ m.arquivo }}">{% endif %}{% endfor %}
 
 <!-- ─────────────── 1. nicho ─────────────── -->
 <section data-passo hidden>
-  <h1>Escolha o nicho</h1>
-  <p class="legenda-topo">Selecione um pronto ou descreva o seu. A série vai propor um tema
-    novo dentro desse assunto toda vez, sem repetir o que já propôs.</p>
+  <h1>Sobre o que vamos criar?</h1>
+  <p class="legenda-topo">Escolha um assunto. O ACEROLAB encontra pautas novas sem repetir ideia.</p>
 
-  <div class="escolhas nichos-visuais">
+  <div class="escolhas nichos-texto">
     {% for n in cat.NICHOS %}
-    <label class="escolha nicho-visual">
+    <label class="escolha nicho-texto">
       <input type="radio" name="nicho" value="{{ n.chave }}" {% if loop.first %}checked{% endif %} required>
-      <img class="nicho-capa" src="{{ n.capa }}" alt="Amostra visual de {{ n.nome }}"
-           {% if loop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
       <span class="nicho-conteudo">
         <h3>{{ n.nome }}{% if n.alta %} <span class="selo viva">Em alta</span>{% endif %}</h3>
         <p>{{ n.resumo }}</p>
       </span>
     </label>
     {% endfor %}
-    <label class="escolha nicho-visual personalizado">
+    <label class="escolha nicho-texto nicho-personalizado">
       <input type="radio" name="nicho" value="personalizado">
-      <span class="nicho-livre"><b>+</b><small>seu universo</small></span>
       <span class="nicho-conteudo">
-        <h3>Personalizado</h3>
-        <p>Descreva o assunto do seu jeito — quanto mais específico, melhor a pauta.</p>
+        <h3>Outro assunto</h3>
+        <p>Escreva do seu jeito.</p>
         <input type="text" name="nicho_personalizado" style="margin-top:10px"
                placeholder="ex.: naufrágios brasileiros pouco conhecidos">
       </span>
@@ -85,96 +87,13 @@
   </div>
 </section>
 
-<!-- ─────────────── 3. música ─────────────── -->
+<!-- ─────────────── 3. estilo visual ─────────────── -->
 <section data-passo hidden>
-  <h1>Estratégia de áudio</h1>
-  <p class="legenda-topo">Escolha entre uma trilha segura já dentro do vídeo ou um som em
-    alta aplicado pela própria plataforma na hora de publicar.</p>
+  <h1>Qual visual combina com a série?</h1>
+  <p class="legenda-topo">Toque no estilo que mais chama atenção. No celular, arraste para o lado.</p>
+  <p class="dica-arraste" aria-hidden="true"><span>Arraste para escolher</span> →</p>
 
-  <div class="escolhas colunas modos-audio">
-    <label class="escolha modo-audio">
-      <input type="radio" name="modo_musica" value="biblioteca" checked>
-      <span class="audio-icone">♫</span>
-      <h3>Trilha segura <span class="selo viva">Automático</span></h3>
-      <p>O MP4 já sai pronto, com música CC0 liberada para qualquer rede.</p>
-    </label>
-    <label class="escolha modo-audio">
-      <input type="radio" name="modo_musica" value="viral">
-      <span class="audio-icone">↗</span>
-      <h3>Som viral da plataforma</h3>
-      <p>O vídeo sai com voz e sem música. Você adiciona o áudio em alta no aplicativo.</p>
-    </label>
-    <label class="escolha modo-audio">
-      <input type="radio" name="modo_musica" value="sem_musica">
-      <span class="audio-icone">∅</span>
-      <h3>Somente narração</h3>
-      <p>Sem trilha de fundo, para conteúdo falado ou edição externa.</p>
-    </label>
-  </div>
-
-  <div class="audio-painel" data-audio-painel="biblioteca">
-  {% if musicas %}
-    <div class="audio-painel-cabeca">
-      <div><span class="selo ok">CC0</span><h2>Biblioteca universal</h2></div>
-      <p>As faixas com selo “vibe atual” já vêm marcadas para o piloto variar sozinho.</p>
-    </div>
-    <div class="escolhas colunas">
-    {% for m in musicas %}
-    <label class="escolha trilha-card">
-      <div class="linha-voz">
-        <input type="checkbox" name="musicas" value="{{ m.arquivo }}" {% if m.destaque %}checked{% endif %}>
-        <button type="button" class="tocar" data-musica="{{ m.arquivo }}"
-                data-rotulo-pronto="Ouvir trecho" aria-label="Ouvir {{ m.nome }}" aria-pressed="false">
-          <svg class="icone-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z"/></svg>
-          <svg class="icone-pausa" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1h3v10H2zm5 0h3v10H7z"/></svg>
-        </button>
-        <div>
-          <h3>{{ m.nome }}{% if m.destaque %}<span class="selo viva">vibe atual</span>{% endif %}</h3>
-          <p>{{ m.genero }}{% if m.vibe %} · {{ m.vibe }}{% endif %}</p>
-          {% if m.autor %}<small>{{ m.autor }} · {{ m.licenca }}</small>{% endif %}
-        </div>
-      </div>
-    </label>
-    {% endfor %}
-    </div>
-  {% else %}
-    <div class="vazio"><h2>Nenhuma trilha instalada ainda</h2></div>
-  {% endif %}
-  </div>
-
-  <div class="audio-painel" data-audio-painel="viral" hidden>
-    <div class="audio-painel-cabeca">
-      <div><span class="selo viva">em alta</span><h2>Onde o som será aplicado?</h2></div>
-      <p>A tendência é escolhida no catálogo oficial da rede e pode mudar por país e por dia.</p>
-    </div>
-    <div class="escolhas colunas plataformas-audio">
-      {% for p in cat.SONS_PLATAFORMA %}
-      <div class="escolha plataforma-audio">
-        <label>
-          <input type="radio" name="plataforma_musica" value="{{ p.chave }}" {% if loop.first %}checked{% endif %}>
-          <h3>{{ p.nome }}</h3>
-          <p>{{ p.biblioteca }}</p>
-          <small>{{ p.alcance }}</small>
-        </label>
-        <a class="ouvir-plataforma" href="{{ p.url_ouvir }}" target="_blank" rel="noopener">{{ p.rotulo_ouvir }} ↗</a>
-      </div>
-      {% endfor %}
-    </div>
-    <div class="aviso audio-aviso">
-      <div><b>O áudio viral não é embutido no arquivo.</b>
-        <p>A música real é ouvida e escolhida na biblioteca oficial. A prévia abre fora do
-          ACEROLAB porque disponibilidade e licença mudam por conta, país e data.</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- ─────────────── 4. estilo visual ─────────────── -->
-<section data-passo hidden>
-  <h1>Estilo visual</h1>
-  <p class="legenda-topo">É a linguagem das imagens de todas as cenas. Cada opção tem uma
-    referência visual; depois, o Estúdio mostra o resultado real daquela série.</p>
-
-  <div class="escolhas colunas estilos-visuais">
+  <div class="escolhas estilos-visuais" tabindex="0" aria-label="Estilos visuais; deslize horizontalmente para ver mais">
     {% for e in cat.ESTILOS %}
     <label class="escolha visual">
       <input type="radio" name="estilo" value="{{ e.chave }}" {% if loop.first %}checked{% endif %}>
@@ -186,123 +105,16 @@
   </div>
 </section>
 
-<!-- ─────────────── 5. motor visual e piloto ─────────────── -->
+<!-- ─────────────── 4. últimos detalhes ─────────────── -->
 <section data-passo hidden>
-  <h1>Motor visual</h1>
-  <p class="legenda-topo">Escolha como a direção transforma o roteiro em cena. O automático
-    usa movimento onde ele segura atenção e imagens dirigidas nos respiros.</p>
+  <h1>Últimos detalhes</h1>
+  <p class="legenda-topo">Dê um nome, escolha o tamanho e decida se quer aprovar cada tema.</p>
 
-  <div class="escolhas colunas motores">
-    <label class="escolha motor">
-      <input type="radio" name="modo" value="automatico" checked>
-      <span class="motor-visual automatico">
-        <img src="/estatico/mural/q13.webp" alt=""><img src="/estatico/mural/q8.webp" alt=""><img src="/estatico/mural/q4.webp" alt="">
-        <i>✦</i>
-      </span>
-      <h3>Diretor automático <span class="selo viva">Recomendado</span></h3>
-      <p>Mistura imagens e clipes nos picos. Mais ritmo sem explodir o custo.</p>
-      <small>aprox. 40% das cenas com movimento</small>
-    </label>
-    <label class="escolha motor">
-      <input type="radio" name="modo" value="imagem">
-      <span class="motor-visual"><img src="/estatico/mural/q4.webp" alt=""><i>▧</i></span>
-      <h3>Imagem dirigida</h3>
-      <p>Câmera virtual, cortes mais rápidos e custo mínimo.</p>
-      <small>melhor para volume e testes</small>
-    </label>
-    <label class="escolha motor">
-      <input type="radio" name="modo" value="video">
-      <span class="motor-visual"><img src="/estatico/mural/q9.webp" alt=""><i>▶</i></span>
-      <h3>Vídeo em todas</h3>
-      <p>Cada batida vira clipe. Mais movimento, maior custo e espera.</p>
-      <small>use em produções especiais</small>
-    </label>
-  </div>
-
-  <label class="campo motor-modelo"><span>Modelo dos clipes</span>
-    <select name="modelo_video">
-      <option value="wan">FastWan 2.2 · rápido e econômico</option>
-      <option value="seedance">Seedance · mais detalhe</option>
-      <option value="kling">Kling · qualidade premium</option>
-    </select>
-    <small class="dica">No modo automático ele só roda nas cenas escolhidas pela direção.</small>
-  </label>
-
-  <div class="piloto-escolha">
-    <div>
-      <span class="selo viva">Piloto automático</span>
-      <h2>Deixe a série trabalhar sozinha</h2>
-      <p>Ela escolhe uma pauta inédita, respeita sua franquia e coloca um vídeo por ciclo na fila.</p>
-    </div>
-    <div class="piloto-controles">
-      <label><input type="radio" name="piloto" value="0" checked> Eu aprovo cada tema</label>
-      <label><input type="radio" name="piloto" value="1"> Gerar automaticamente</label>
-      <select name="frequencia" aria-label="Frequência do piloto">
-        <option value="diario">Todo dia</option>
-        <option value="tres_semana">3 vezes por semana</option>
-        <option value="semanal" selected>Toda semana</option>
-      </select>
-    </div>
-  </div>
-</section>
-
-<!-- ─────────────── 6. legenda ─────────────── -->
-<section data-passo hidden>
-  <h1>Estilo de legenda</h1>
-  <p class="legenda-topo">A legenda mostra frases curtas e destaca a palavra falada.
-    Assim dá para entender o contexto sem perder o ritmo.</p>
-
-  <div class="escolhas colunas">
-    {% for l in cat.LEGENDAS %}
-    <label class="escolha" style="padding:15px">
-      <input type="radio" name="legenda" value="{{ l.chave }}" {% if loop.first %}checked{% endif %}>
-      <div class="previa-legenda">
-        <b style="color:{{ l.cor }};
-                  -webkit-text-stroke:{{ (28 / l.peso_contorno)|round(1) }}px {{ l.contorno }};
-                  paint-order:stroke fill;
-                  text-transform:{{ 'uppercase' if l.caixa_alta else 'lowercase' }}">sabia</b>
-      </div>
-      <h3>{{ l.nome }}</h3>
-    </label>
-    {% endfor %}
-  </div>
-</section>
-
-<!-- ─────────────── 6. redes ─────────────── -->
-<section data-passo hidden>
-  <h1>Publicar sozinho</h1>
-  <p class="legenda-topo">Conectar o canal para a série publicar no horário, sem você abrir
-    o aplicativo. Ainda não está ligado — e a gente prefere dizer por quê.</p>
-
-  <div class="escolhas colunas desligado">
-    {% for r in cat.REDES %}
-    <div class="escolha">
-      <h3>{{ r.nome }} <span class="selo">Em breve</span></h3>
-      <p>{{ r.motivo }}</p>
-    </div>
-    {% endfor %}
-  </div>
-
-  <div class="aviso" style="margin-top:20px">
-    <div>
-      <b>Publicar por conta própria depende de auditoria das plataformas.</b>
-      <p>O Google exige verificação do aplicativo para liberar envio de vídeo, e o TikTok
-         exige auditoria para publicar de verdade em vez de rascunho. Enquanto isso não sai,
-         a série gera e você baixa — e o dia em que liberar, o botão liga para as séries
-         que já existem.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ─────────────── 7. detalhes ─────────────── -->
-<section data-passo hidden>
-  <h1>Detalhes da série</h1>
-  <p class="legenda-topo">Dê um nome e escolha a duração dos vídeos.</p>
-
-  <label class="campo" style="max-width:420px"><span>Nome da série</span>
+  <label class="campo nome-serie"><span>Nome da série <small>opcional</small></span>
     <input type="text" name="nome" placeholder="ex.: Casos que ninguém explicou" maxlength="80"></label>
 
-  <div class="escolhas colunas" style="max-width:640px">
+  <h2 class="titulo-escolha">Duração dos vídeos</h2>
+  <div class="escolhas colunas duracoes-simples">
     {% for d in cat.DURACOES %}
     <label class="escolha">
       <input type="radio" name="duracao" value="{{ d.chave }}" {% if loop.first %}checked{% endif %}>
@@ -310,6 +122,38 @@
       <p>{{ d.cenas }} cenas.{% if d.aviso %} {{ d.aviso }}{% endif %}</p>
     </label>
     {% endfor %}
+  </div>
+
+  <div class="piloto-simples">
+    <div class="piloto-simples-cabeca">
+      <span class="selo viva">Piloto automático</span>
+      <h2>Como a série começa?</h2>
+    </div>
+    <div class="escolhas piloto-opcoes">
+      <label class="escolha">
+        <input type="radio" name="piloto" value="0" checked>
+        <h3>Eu aprovo os temas</h3>
+        <p>O ACEROLAB sugere e você decide o que vira vídeo.</p>
+      </label>
+      <label class="escolha">
+        <input type="radio" name="piloto" value="1">
+        <h3>Gerar sozinho</h3>
+        <p>Um tema novo entra automaticamente na frequência escolhida.</p>
+      </label>
+    </div>
+    <label class="campo frequencia-piloto" hidden><span>Frequência</span>
+      <select name="frequencia">
+        <option value="diario">Todo dia</option>
+        <option value="tres_semana">3 vezes por semana</option>
+        <option value="semanal" selected>Toda semana</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="automatico-resumo">
+    <span aria-hidden="true">✦</span>
+    <div><b>O restante já fica no automático</b>
+      <p>Direção visual, legenda e trilha segura vêm configuradas. Você pode mudar tudo depois na central da série.</p></div>
   </div>
 </section>
 
@@ -356,22 +200,26 @@
     document.querySelector('input[name=nicho][value=personalizado]').checked = true;
   });
 
+  // O piloto é uma decisão simples; a frequência só aparece quando importa.
+  const frequenciaPiloto = document.querySelector('.frequencia-piloto');
+  function atualizarPiloto() {
+    const automatico = document.querySelector('input[name=piloto]:checked')?.value === '1';
+    if (frequenciaPiloto) frequenciaPiloto.hidden = !automatico;
+  }
+  document.querySelectorAll('input[name=piloto]').forEach(input =>
+    input.addEventListener('change', atualizarPiloto));
+  atualizarPiloto();
+
+  // No carrossel móvel, a opção tocada encaixa no centro sem pular a página.
+  document.querySelectorAll('.estilos-visuais input').forEach(input => {
+    input.addEventListener('change', () => input.closest('.visual')?.scrollIntoView({
+      behavior: 'smooth', block: 'nearest', inline: 'center'
+    }));
+  });
+
   // Prévia de áudio: um tocando por vez e sempre com retorno visível.
   let tocando = null;
   const audioFeedback = document.getElementById('audio-feedback');
-
-  function atualizarEstrategiaAudio() {
-    pararAtual();
-    const modo = document.querySelector('input[name=modo_musica]:checked')?.value || 'biblioteca';
-    document.querySelectorAll('[data-audio-painel]').forEach(painel => {
-      const ativo = painel.dataset.audioPainel === modo;
-      painel.hidden = !ativo;
-      painel.querySelectorAll('input').forEach(input => input.disabled = !ativo);
-    });
-  }
-  document.querySelectorAll('input[name=modo_musica]').forEach(input =>
-    input.addEventListener('change', atualizarEstrategiaAudio));
-  atualizarEstrategiaAudio();
 
   function statusDo(botao) {
     return botao.closest('.voz-card')?.querySelector('.voz-status');
@@ -409,7 +257,7 @@
     audioFeedback.textContent = '';
     botao.dataset.carregando = '1';
     const status = statusDo(botao);
-    if (status) status.textContent = botao.dataset.musica ? 'Carregando música…' : 'Carregando voz…';
+    if (status) status.textContent = 'Carregando voz…';
 
     const audio = new Audio();
     audio.preload = 'auto';
@@ -421,9 +269,7 @@
       tocando = null;
       limparBotao(botao);
       if (status) status.textContent = 'Não carregou';
-      audioFeedback.textContent = botao.dataset.musica
-        ? 'Não consegui carregar esta música agora. Tente novamente em alguns segundos.'
-        : 'Não consegui carregar esta voz agora. Tente novamente em alguns segundos.';
+      audioFeedback.textContent = 'Não consegui carregar esta voz agora. Tente novamente em alguns segundos.';
       audioFeedback.hidden = false;
     }
 
@@ -435,7 +281,7 @@
       if (status) status.textContent = 'Tocando agora';
     });
     audio.addEventListener('waiting', () => {
-      if (aindaAtual() && status) status.textContent = botao.dataset.musica ? 'Carregando música…' : 'Carregando voz…';
+      if (aindaAtual() && status) status.textContent = 'Carregando voz…';
     });
     audio.addEventListener('ended', () => {
       if (!aindaAtual()) return;
@@ -451,8 +297,7 @@
     if (!b) return;
     e.preventDefault();
     const idioma = document.getElementById('idioma')?.value || 'pt-BR';
-    if (b.dataset.voz)     tocar(`/api/voz/${b.dataset.voz}?idioma=${idioma}`, b);
-    if (b.dataset.musica)  tocar(`/api/musica/${b.dataset.musica}`, b);
+    if (b.dataset.voz) tocar(`/api/voz/${b.dataset.voz}?idioma=${idioma}`, b);
   });
 
   mostrar(0);
