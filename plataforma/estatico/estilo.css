@@ -38,11 +38,13 @@
    senão botão escondido pelo JS continua aparecendo. */
 [hidden]{display:none !important}
 html,body{height:100%}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{
   margin:0;background:var(--fundo);color:var(--tinta);
   font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.55;
-  -webkit-font-smoothing:antialiased;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
 }
+img,video{max-width:100%}
 a{color:inherit}
 h1,h2,h3,.display{font-family:'Outfit','Inter',sans-serif;letter-spacing:-.018em}
 
@@ -71,7 +73,7 @@ h1,h2,h3,.display{font-family:'Outfit','Inter',sans-serif;letter-spacing:-.018em
    esquerda com 600px de vazio do lado direito, o que dá a impressão de tela
    quebrada. `margin-inline:auto` resolve sem mexer em nenhuma grade. */
 .conteudo{padding:34px clamp(20px,3.4vw,52px) 96px;max-width:1240px;
-  margin-inline:auto;width:100%}
+  margin-inline:auto;width:100%;min-width:0}
 .trilha{font-size:13px;color:var(--tinta-3);margin-bottom:6px}
 h1{font-size:29px;font-weight:700;margin:0 0 6px}
 .legenda-topo{color:var(--tinta-2);margin:0 0 28px;max-width:56ch}
@@ -421,8 +423,12 @@ tr:last-child td{border-bottom:none}
   }
 
   /* o conteúdo não pode terminar embaixo da barra */
-  .conteudo{padding:22px 18px calc(96px + env(safe-area-inset-bottom))}
+  .conteudo{padding:22px 14px calc(96px + env(safe-area-inset-bottom))}
   h1{font-size:23px}
+
+  /* iOS amplia automaticamente controles menores que 16px ao receber foco.
+     O zoom ficava preso depois que a pessoa escolhia idioma ou digitava. */
+  input[type=text],input[type=email],input[type=password],select,textarea{font-size:16px}
 }
 
 /* ═══════════ grade de vídeo ═══════════
@@ -964,9 +970,20 @@ input[aria-invalid]:focus{outline-color:var(--acerola)}
   .storyboard-cabeca p{display:none}
   .batida{grid-template-columns:28px 90px minmax(0,1fr);gap:9px;padding:8px}
   .fala{font-size:13px}.batida-meta > span:not(.energia){font-size:8px}
-  .nichos-visuais{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .nicho-conteudo{padding:11px 12px 13px}.nicho-conteudo p{font-size:12px}
+  /* Duas miniaturas compactas também nos celulares estreitos. Uma coluna
+     fazia cada capa parecer uma foto ampliada em vez de uma opção da grade. */
+  .nichos-visuais{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .nicho-conteudo{padding:9px 10px 11px}
+  .nicho-conteudo h3{font-size:13.5px;gap:4px}
+  .nicho-conteudo .selo{font-size:8px;padding:2px 5px}
+  .nicho-conteudo p{font-size:11.5px;line-height:1.35;display:-webkit-box;
+    -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .estilos-visuais{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .prateleira{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .vazio-com-imagens{grid-template-columns:1fr}.vazio-mosaico{min-height:230px}
   .vazio-com-imagens > div:last-child{padding:28px}
 }
-@media (max-width:460px){.nichos-visuais{grid-template-columns:1fr}}
+@media (max-width:360px){
+  .conteudo{padding-left:10px;padding-right:10px}
+  .nichos-visuais{gap:6px}
+}

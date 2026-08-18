@@ -23,6 +23,22 @@ class CatalogoVisualTest(unittest.TestCase):
         self.assertEqual(len(ids), 6)
         self.assertEqual(len(set(ids)), len(ids))
 
+    def test_grade_mobile_nao_amplia_capas_nem_controles(self) -> None:
+        css = (RAIZ / "plataforma" / "estatico" / "estilo.css").read_text()
+
+        self.assertIn(
+            ".nichos-visuais{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}",
+            css,
+        )
+        self.assertIn(
+            "input[type=text],input[type=email],input[type=password],select,textarea{font-size:16px}",
+            css,
+        )
+        self.assertNotIn(
+            "@media (max-width:460px){.nichos-visuais{grid-template-columns:1fr}}",
+            css,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

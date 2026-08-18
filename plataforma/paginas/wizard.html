@@ -122,7 +122,7 @@
   <p class="legenda-topo">É a linguagem das imagens de todas as cenas. Cada opção tem uma
     referência visual; depois, o Estúdio mostra o resultado real daquela série.</p>
 
-  <div class="escolhas colunas">
+  <div class="escolhas colunas estilos-visuais">
     {% for e in cat.ESTILOS %}
     <label class="escolha visual">
       <input type="radio" name="estilo" value="{{ e.chave }}" {% if loop.first %}checked{% endif %}>
