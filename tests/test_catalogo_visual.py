@@ -85,6 +85,9 @@ class CatalogoVisualTest(unittest.TestCase):
         self.assertEqual(musicas, [disponivel])
         self.assertEqual({p.chave for p in SONS_PLATAFORMA},
                          {"tiktok", "instagram", "youtube"})
+        for plataforma_som in SONS_PLATAFORMA:
+            self.assertTrue(plataforma_som.url_ouvir.startswith("https://"))
+            self.assertTrue(plataforma_som.rotulo_ouvir)
 
     def test_wizard_explica_que_som_viral_nao_e_embutido(self) -> None:
         html = (RAIZ / "plataforma" / "paginas" / "wizard.html").read_text()
@@ -92,6 +95,9 @@ class CatalogoVisualTest(unittest.TestCase):
         self.assertIn("Som viral da plataforma", html)
         self.assertIn("O áudio viral não é embutido no arquivo", html)
         self.assertIn('data-audio-painel="viral"', html)
+        self.assertIn("ouvir-plataforma", html)
+        self.assertIn("if (document.hidden) pararAtual()", html)
+        self.assertIn("window.addEventListener('pagehide', pararAtual)", html)
 
 
 if __name__ == "__main__":

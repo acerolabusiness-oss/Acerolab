@@ -149,18 +149,21 @@
     </div>
     <div class="escolhas colunas plataformas-audio">
       {% for p in cat.SONS_PLATAFORMA %}
-      <label class="escolha plataforma-audio">
-        <input type="radio" name="plataforma_musica" value="{{ p.chave }}" {% if loop.first %}checked{% endif %}>
-        <h3>{{ p.nome }}</h3>
-        <p>{{ p.biblioteca }}</p>
-        <small>{{ p.alcance }}</small>
-      </label>
+      <div class="escolha plataforma-audio">
+        <label>
+          <input type="radio" name="plataforma_musica" value="{{ p.chave }}" {% if loop.first %}checked{% endif %}>
+          <h3>{{ p.nome }}</h3>
+          <p>{{ p.biblioteca }}</p>
+          <small>{{ p.alcance }}</small>
+        </label>
+        <a class="ouvir-plataforma" href="{{ p.url_ouvir }}" target="_blank" rel="noopener">{{ p.rotulo_ouvir }} ↗</a>
+      </div>
       {% endfor %}
     </div>
     <div class="aviso audio-aviso">
       <div><b>O áudio viral não é embutido no arquivo.</b>
-        <p>Isso evita Content ID e bloqueios. O Estúdio entrega o MP4 limpo e mostra o passo
-          exato para adicionar o som na rede escolhida.</p></div>
+        <p>A música real é ouvida e escolhida na biblioteca oficial. A prévia abre fora do
+          ACEROLAB porque disponibilidade e licença mudam por conta, país e data.</p></div>
     </div>
   </div>
 </section>
@@ -329,6 +332,7 @@
   let atual = 0;
 
   function mostrar(i) {
+    pararAtual();
     atual = Math.max(0, Math.min(i, secoes.length - 1));
     secoes.forEach((s, n) => s.hidden = n !== atual);
     marcas.forEach((m, n) => m.classList.toggle('feito', n <= atual));
@@ -357,6 +361,7 @@
   const audioFeedback = document.getElementById('audio-feedback');
 
   function atualizarEstrategiaAudio() {
+    pararAtual();
     const modo = document.querySelector('input[name=modo_musica]:checked')?.value || 'biblioteca';
     document.querySelectorAll('[data-audio-painel]').forEach(painel => {
       const ativo = painel.dataset.audioPainel === modo;
@@ -385,8 +390,15 @@
     const atual = tocando;
     tocando = null;
     atual.audio.pause();
+    atual.audio.removeAttribute('src');
+    atual.audio.load();
     limparBotao(atual.botao);
   }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) pararAtual();
+  });
+  window.addEventListener('pagehide', pararAtual);
 
   function tocar(url, botao) {
     const eraOMesmo = tocando?.botao === botao;

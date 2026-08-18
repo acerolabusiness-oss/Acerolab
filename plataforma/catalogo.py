@@ -236,6 +236,8 @@ class SomPlataforma:
     nome: str
     biblioteca: str
     url: str
+    url_ouvir: str
+    rotulo_ouvir: str
     instrucao: str
     alcance: str
 
@@ -247,18 +249,24 @@ SONS_PLATAFORMA: tuple[SomPlataforma, ...] = (
     SomPlataforma(
         "tiktok", "TikTok", "Commercial Music Library",
         "https://ads.tiktok.com/help/article/how-to-use-the-commercial-music-library?lang=pt",
+        "https://ads.tiktok.com/business/creativecenter/pc/en",
+        "Ouvir sons em alta",
         "No TikTok, toque em Adicionar som e escolha uma faixa comercial em alta no Brasil.",
         "orgânico e anúncios, conforme a faixa",
     ),
     SomPlataforma(
         "instagram", "Instagram", "Meta Sound Collection",
         "https://www.facebook.com/help/instagram/402084904469945",
+        "https://www.facebook.com/sound/collection",
+        "Ouvir Sound Collection",
         "No Reels, toque em Áudio e escolha uma faixa liberada para uso comercial.",
         "Reels, Stories e anúncios",
     ),
     SomPlataforma(
         "youtube", "YouTube Shorts", "Biblioteca de áudio do Shorts",
         "https://support.google.com/youtube/answer/13053317?hl=pt-BR",
+        "https://www.youtube.com/audiolibrary",
+        "Ouvir biblioteca segura",
         "No Shorts, toque em Adicionar som antes de publicar; não reenvie o áudio fora do YouTube.",
         "Shorts, conforme a licença exibida",
     ),

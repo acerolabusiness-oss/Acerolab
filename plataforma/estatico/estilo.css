@@ -259,7 +259,12 @@ input:focus,select:focus{outline:2px solid var(--acerola);outline-offset:-1px;bo
   margin-top:4px;color:var(--tinta-3);font-size:11.5px}
 .trilha-card h3 .selo{font-size:8px;padding:2px 5px}
 .plataformas-audio{grid-template-columns:repeat(3,minmax(0,1fr)) !important}
-.plataforma-audio{min-height:120px}.audio-aviso{margin:15px 0 0}
+.plataforma-audio{min-height:120px;display:flex;flex-direction:column;padding:0;overflow:hidden}
+.plataforma-audio>label{display:block;flex:1;padding:15px 17px;cursor:pointer}
+.ouvir-plataforma{display:block;padding:10px 17px;border-top:1px solid var(--regua);
+  color:var(--acerola);font-weight:800;text-decoration:none;
+  background:color-mix(in srgb,var(--acerola) 6%,transparent)}
+.ouvir-plataforma:hover{text-decoration:underline}.audio-aviso{margin:15px 0 0}
 @media (prefers-reduced-motion:reduce){
   .tocar[data-carregando]::after,.voz-card:has(.tocar[data-ativo]) .onda-voz i{animation:none}
 }
@@ -966,6 +971,7 @@ input[aria-invalid]:focus{outline-color:var(--acerola)}
   align-items:center;background:color-mix(in srgb,var(--acerola) 7%,var(--papel));
   border:1px solid color-mix(in srgb,var(--acerola) 26%,var(--regua));border-radius:13px;
   padding:16px;margin-bottom:7px}.entrega-viral.neutra{background:var(--papel);border-color:var(--regua)}
+.entrega-viral-acoes{display:flex;flex-direction:column;gap:7px}
 .entrega-viral-icone{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;
   color:#fff;background:var(--acerola);font:800 20px 'Outfit',sans-serif}
 .entrega-viral.neutra .entrega-viral-icone{background:var(--painel);color:var(--tinta-2)}
@@ -1018,7 +1024,8 @@ input[aria-invalid]:focus{outline-color:var(--acerola)}
   .storyboard-cabeca p{display:none}
   .batida{grid-template-columns:28px 90px minmax(0,1fr);gap:9px;padding:8px}
   .entrega-viral{grid-template-columns:42px minmax(0,1fr);padding:13px}
-  .entrega-viral-icone{width:42px;height:42px}.entrega-viral .botao{grid-column:1/-1;width:100%}
+  .entrega-viral-icone{width:42px;height:42px}.entrega-viral-acoes{grid-column:1/-1;width:100%}
+  .entrega-viral-acoes .botao{width:100%}
   .fala{font-size:13px}.batida-meta > span:not(.energia){font-size:8px}
   /* Duas miniaturas compactas também nos celulares estreitos. Uma coluna
      fazia cada capa parecer uma foto ampliada em vez de uma opção da grade. */

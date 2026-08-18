@@ -36,7 +36,10 @@
         <p>{{ plataforma_som.instrucao }}</p>
         <small>O MP4 contém a narração, mas não incorpora música protegida.</small>
       </div>
-      <a class="botao calmo" href="{{ plataforma_som.url }}" target="_blank" rel="noopener">Abrir instruções oficiais</a>
+      <div class="entrega-viral-acoes">
+        <a class="botao" href="{{ plataforma_som.url_ouvir }}" target="_blank" rel="noopener">{{ plataforma_som.rotulo_ouvir }}</a>
+        <a class="botao calmo" href="{{ plataforma_som.url }}" target="_blank" rel="noopener">Ver instruções</a>
+      </div>
     </section>
     {% elif video['modo_musica'] == 'sem_musica' %}
     <section class="entrega-viral neutra">
