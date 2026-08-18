@@ -87,36 +87,82 @@
 
 <!-- ─────────────── 3. música ─────────────── -->
 <section data-passo hidden>
-  <h1>Música de fundo <span class="selo">Opcional</span></h1>
-  <p class="legenda-topo">Marque quantas quiser: uma é sorteada a cada vídeo, para a série
-    inteira não soar igual.</p>
+  <h1>Estratégia de áudio</h1>
+  <p class="legenda-topo">Escolha entre uma trilha segura já dentro do vídeo ou um som em
+    alta aplicado pela própria plataforma na hora de publicar.</p>
 
+  <div class="escolhas colunas modos-audio">
+    <label class="escolha modo-audio">
+      <input type="radio" name="modo_musica" value="biblioteca" checked>
+      <span class="audio-icone">♫</span>
+      <h3>Trilha segura <span class="selo viva">Automático</span></h3>
+      <p>O MP4 já sai pronto, com música CC0 liberada para qualquer rede.</p>
+    </label>
+    <label class="escolha modo-audio">
+      <input type="radio" name="modo_musica" value="viral">
+      <span class="audio-icone">↗</span>
+      <h3>Som viral da plataforma</h3>
+      <p>O vídeo sai com voz e sem música. Você adiciona o áudio em alta no aplicativo.</p>
+    </label>
+    <label class="escolha modo-audio">
+      <input type="radio" name="modo_musica" value="sem_musica">
+      <span class="audio-icone">∅</span>
+      <h3>Somente narração</h3>
+      <p>Sem trilha de fundo, para conteúdo falado ou edição externa.</p>
+    </label>
+  </div>
+
+  <div class="audio-painel" data-audio-painel="biblioteca">
   {% if musicas %}
-  <div class="escolhas colunas">
+    <div class="audio-painel-cabeca">
+      <div><span class="selo ok">CC0</span><h2>Biblioteca universal</h2></div>
+      <p>As faixas com selo “vibe atual” já vêm marcadas para o piloto variar sozinho.</p>
+    </div>
+    <div class="escolhas colunas">
     {% for m in musicas %}
-    <label class="escolha">
+    <label class="escolha trilha-card">
       <div class="linha-voz">
-        <input type="checkbox" name="musicas" value="{{ m.arquivo }}">
+        <input type="checkbox" name="musicas" value="{{ m.arquivo }}" {% if m.destaque %}checked{% endif %}>
         <button type="button" class="tocar" data-musica="{{ m.arquivo }}"
                 data-rotulo-pronto="Ouvir trecho" aria-label="Ouvir {{ m.nome }}" aria-pressed="false">
           <svg class="icone-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z"/></svg>
           <svg class="icone-pausa" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1h3v10H2zm5 0h3v10H7z"/></svg>
         </button>
         <div>
-          <h3>{{ m.nome }}</h3>
-          <p>{{ m.genero }}{% if m.autor %} · {{ m.autor }} · {{ m.licenca }}{% endif %}</p>
+          <h3>{{ m.nome }}{% if m.destaque %}<span class="selo viva">vibe atual</span>{% endif %}</h3>
+          <p>{{ m.genero }}{% if m.vibe %} · {{ m.vibe }}{% endif %}</p>
+          {% if m.autor %}<small>{{ m.autor }} · {{ m.licenca }}</small>{% endif %}
         </div>
       </div>
     </label>
     {% endfor %}
-  </div>
+    </div>
   {% else %}
-  <div class="vazio">
-    <h2>Nenhuma trilha instalada ainda</h2>
-    <p>Ponha os arquivos <code>.mp3</code> em <code>recursos/musicas/</code> com os nomes
-       do catálogo. Só aparece aqui o que existe em disco — opção que não toca não vai pra tela.</p>
-  </div>
+    <div class="vazio"><h2>Nenhuma trilha instalada ainda</h2></div>
   {% endif %}
+  </div>
+
+  <div class="audio-painel" data-audio-painel="viral" hidden>
+    <div class="audio-painel-cabeca">
+      <div><span class="selo viva">em alta</span><h2>Onde o som será aplicado?</h2></div>
+      <p>A tendência é escolhida no catálogo oficial da rede e pode mudar por país e por dia.</p>
+    </div>
+    <div class="escolhas colunas plataformas-audio">
+      {% for p in cat.SONS_PLATAFORMA %}
+      <label class="escolha plataforma-audio">
+        <input type="radio" name="plataforma_musica" value="{{ p.chave }}" {% if loop.first %}checked{% endif %}>
+        <h3>{{ p.nome }}</h3>
+        <p>{{ p.biblioteca }}</p>
+        <small>{{ p.alcance }}</small>
+      </label>
+      {% endfor %}
+    </div>
+    <div class="aviso audio-aviso">
+      <div><b>O áudio viral não é embutido no arquivo.</b>
+        <p>Isso evita Content ID e bloqueios. O Estúdio entrega o MP4 limpo e mostra o passo
+          exato para adicionar o som na rede escolhida.</p></div>
+    </div>
+  </div>
 </section>
 
 <!-- ─────────────── 4. estilo visual ─────────────── -->
@@ -310,6 +356,18 @@
   let tocando = null;
   const audioFeedback = document.getElementById('audio-feedback');
 
+  function atualizarEstrategiaAudio() {
+    const modo = document.querySelector('input[name=modo_musica]:checked')?.value || 'biblioteca';
+    document.querySelectorAll('[data-audio-painel]').forEach(painel => {
+      const ativo = painel.dataset.audioPainel === modo;
+      painel.hidden = !ativo;
+      painel.querySelectorAll('input').forEach(input => input.disabled = !ativo);
+    });
+  }
+  document.querySelectorAll('input[name=modo_musica]').forEach(input =>
+    input.addEventListener('change', atualizarEstrategiaAudio));
+  atualizarEstrategiaAudio();
+
   function statusDo(botao) {
     return botao.closest('.voz-card')?.querySelector('.voz-status');
   }
@@ -339,7 +397,7 @@
     audioFeedback.textContent = '';
     botao.dataset.carregando = '1';
     const status = statusDo(botao);
-    if (status) status.textContent = 'Carregando voz…';
+    if (status) status.textContent = botao.dataset.musica ? 'Carregando música…' : 'Carregando voz…';
 
     const audio = new Audio();
     audio.preload = 'auto';
@@ -351,7 +409,9 @@
       tocando = null;
       limparBotao(botao);
       if (status) status.textContent = 'Não carregou';
-      audioFeedback.textContent = 'Não consegui carregar esta voz agora. Tente novamente em alguns segundos.';
+      audioFeedback.textContent = botao.dataset.musica
+        ? 'Não consegui carregar esta música agora. Tente novamente em alguns segundos.'
+        : 'Não consegui carregar esta voz agora. Tente novamente em alguns segundos.';
       audioFeedback.hidden = false;
     }
 
@@ -363,7 +423,7 @@
       if (status) status.textContent = 'Tocando agora';
     });
     audio.addEventListener('waiting', () => {
-      if (aindaAtual() && status) status.textContent = 'Carregando voz…';
+      if (aindaAtual() && status) status.textContent = botao.dataset.musica ? 'Carregando música…' : 'Carregando voz…';
     });
     audio.addEventListener('ended', () => {
       if (!aindaAtual()) return;

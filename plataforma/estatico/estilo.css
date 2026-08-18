@@ -243,6 +243,23 @@ input:focus,select:focus{outline:2px solid var(--acerola);outline-offset:-1px;bo
 @keyframes onda{to{transform:scaleY(.35)}}
 .linha-voz{display:flex;align-items:center;gap:12px}
 .linha-voz > div{flex:1;min-width:0}
+.modos-audio{grid-template-columns:repeat(3,minmax(0,1fr)) !important;margin-bottom:20px}
+.modo-audio{min-height:156px;padding:18px;display:flex;flex-direction:column;gap:7px}
+.modo-audio h3{margin:0}.modo-audio p{margin-top:auto}
+.audio-icone{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
+  background:var(--painel);color:var(--acerola);font:800 18px 'Outfit',sans-serif}
+.modo-audio:has(input:checked) .audio-icone{background:var(--acerola);color:#fff}
+.audio-painel{padding:19px;border:1px solid var(--regua);border-radius:14px;background:var(--painel)}
+.audio-painel-cabeca{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;
+  margin-bottom:14px}
+.audio-painel-cabeca > div{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.audio-painel-cabeca h2{font-size:18px;margin:0}.audio-painel-cabeca p{margin:0;
+  color:var(--tinta-2);font-size:12.5px;max-width:48ch;text-align:right}
+.trilha-card{padding:13px 14px}.trilha-card small,.plataforma-audio small{display:block;
+  margin-top:4px;color:var(--tinta-3);font-size:11.5px}
+.trilha-card h3 .selo{font-size:8px;padding:2px 5px}
+.plataformas-audio{grid-template-columns:repeat(3,minmax(0,1fr)) !important}
+.plataforma-audio{min-height:120px}.audio-aviso{margin:15px 0 0}
 @media (prefers-reduced-motion:reduce){
   .tocar[data-carregando]::after,.voz-card:has(.tocar[data-ativo]) .onda-voz i{animation:none}
 }
@@ -909,6 +926,22 @@ input[aria-invalid]:focus{outline-color:var(--acerola)}
 .chave-piloto input:checked + span i{transform:translateX(16px)}
 .chave-piloto input:focus-visible + span{outline:2px solid var(--acerola);outline-offset:2px}
 .proximo-ciclo{display:block;color:var(--tinta-3);font-size:12px;margin-top:12px}
+.direcao-audio{margin-top:18px;padding-top:18px;border-top:1px solid var(--regua)}
+.direcao-audio-cabeca{display:flex;align-items:end;justify-content:space-between;gap:20px;
+  margin-bottom:12px}.direcao-audio-cabeca > div{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.direcao-audio-cabeca h3{font-size:16px;margin:0}.direcao-audio-cabeca p{margin:0;
+  color:var(--tinta-3);font-size:12.5px;text-align:right}
+.direcao-audio-opcoes{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:10px}
+.direcao-audio-opcoes .campo{margin:0}
+.trilhas-compactas{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+.trilhas-compactas label{position:relative;cursor:pointer}.trilhas-compactas input{position:absolute;
+  opacity:0;width:0;height:0}.trilhas-compactas span{display:flex;align-items:center;gap:6px;
+  padding:7px 9px;border:1px solid var(--regua);border-radius:8px;background:var(--papel);
+  color:var(--tinta-2);font-size:12px}.trilhas-compactas input:checked + span{border-color:var(--acerola);
+  color:var(--tinta);box-shadow:inset 0 0 0 1px var(--acerola)}
+.trilhas-compactas input:focus-visible + span{outline:2px solid var(--acerola);outline-offset:2px}
+.trilhas-compactas i{font-style:normal;font:700 8px 'Outfit',sans-serif;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--acerola)}
 
 /* ───────────── estúdio visual ───────────── */
 .estudio-topo{display:flex;justify-content:space-between;gap:24px;align-items:flex-end;
@@ -929,6 +962,15 @@ input[aria-invalid]:focus{outline-color:var(--acerola)}
   text-transform:uppercase}
 .ficha-direcao dd{color:#d8d8dd;margin:3px 0 0;font-size:11.5px;line-height:1.4}
 .storyboard{display:grid;gap:10px}
+.entrega-viral{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:14px;
+  align-items:center;background:color-mix(in srgb,var(--acerola) 7%,var(--papel));
+  border:1px solid color-mix(in srgb,var(--acerola) 26%,var(--regua));border-radius:13px;
+  padding:16px;margin-bottom:7px}.entrega-viral.neutra{background:var(--papel);border-color:var(--regua)}
+.entrega-viral-icone{width:48px;height:48px;border-radius:12px;display:grid;place-items:center;
+  color:#fff;background:var(--acerola);font:800 20px 'Outfit',sans-serif}
+.entrega-viral.neutra .entrega-viral-icone{background:var(--painel);color:var(--tinta-2)}
+.entrega-viral h2{font-size:17px;margin:5px 0 1px}.entrega-viral p{margin:0;color:var(--tinta-2);
+  font-size:13px}.entrega-viral small{display:block;margin-top:4px;color:var(--tinta-3);font-size:11.5px}
 .storyboard-cabeca{display:flex;justify-content:space-between;align-items:end;gap:18px;
   margin-bottom:4px}
 .storyboard-cabeca h2{font-size:21px;margin:6px 0 0}
@@ -960,15 +1002,23 @@ input[aria-invalid]:focus{outline-color:var(--acerola)}
   .estudio-grade{grid-template-columns:260px minmax(0,1fr)}
 }
 @media (max-width:700px){
+  .modos-audio,.plataformas-audio{grid-template-columns:1fr !important}
+  .modo-audio{min-height:0}.audio-painel{padding:13px}
+  .audio-painel-cabeca{align-items:flex-start;flex-direction:column;gap:6px}
+  .audio-painel-cabeca p{text-align:left}
   .motores{grid-template-columns:1fr !important}
   .escolha.motor{min-height:0}
   .piloto-escolha{grid-template-columns:1fr}
   .direcao-controles{grid-template-columns:1fr}.direcao-controles .botao{width:100%}
+  .direcao-audio-cabeca{align-items:flex-start;flex-direction:column;gap:5px}
+  .direcao-audio-cabeca p{text-align:left}.direcao-audio-opcoes{grid-template-columns:1fr}
   .estudio-topo{align-items:flex-start;flex-direction:column}
   .estudio-acoes{width:100%;flex-wrap:wrap}
   .estudio-grade{grid-template-columns:1fr}.monitor{position:relative;top:auto;max-width:300px;margin:auto}
   .storyboard-cabeca p{display:none}
   .batida{grid-template-columns:28px 90px minmax(0,1fr);gap:9px;padding:8px}
+  .entrega-viral{grid-template-columns:42px minmax(0,1fr);padding:13px}
+  .entrega-viral-icone{width:42px;height:42px}.entrega-viral .botao{grid-column:1/-1;width:100%}
   .fala{font-size:13px}.batida-meta > span:not(.energia){font-size:8px}
   /* Duas miniaturas compactas também nos celulares estreitos. Uma coluna
      fazia cada capa parecer uma foto ampliada em vez de uma opção da grade. */

@@ -4,7 +4,8 @@ from __future__ import annotations
 import unittest
 
 from esteira.config import RAIZ
-from plataforma.catalogo import NICHOS, VOZES, musicas_disponiveis
+from plataforma.catalogo import (NICHOS, SONS_PLATAFORMA, VOZES,
+                                 configurar_musica, musicas_disponiveis)
 
 
 class CatalogoVisualTest(unittest.TestCase):
@@ -56,6 +57,41 @@ class CatalogoVisualTest(unittest.TestCase):
             self.assertGreater(trilha.caminho.stat().st_size, 1_000_000)
             self.assertEqual(trilha.autor, "John Bartmann")
             self.assertEqual(trilha.licenca, "CC0")
+
+    def test_pacote_de_vibe_atual_esta_instalado_e_liberado(self) -> None:
+        trilhas = {t.arquivo: t for t in musicas_disponiveis()}
+        atuais = {
+            "pulso-noturno.mp3",
+            "lofi-depois-da-meia-noite.mp3",
+            "rua-em-movimento.mp3",
+            "neon-acelerado.mp3",
+            "onda-de-verao.mp3",
+        }
+
+        self.assertTrue(atuais.issubset(trilhas))
+        for nome in atuais:
+            trilha = trilhas[nome]
+            self.assertTrue(trilha.destaque)
+            self.assertEqual(trilha.autor, "Loyalty Freak Music")
+            self.assertEqual(trilha.licenca, "CC0")
+            self.assertGreater(trilha.caminho.stat().st_size, 1_000_000)
+
+    def test_modo_viral_usa_catalogo_oficial_e_filtra_arquivo_inventado(self) -> None:
+        disponivel = musicas_disponiveis()[0].arquivo
+        modo, plataforma, musicas = configurar_musica(
+            "viral", "youtube", [disponivel, "nao-existe.mp3", disponivel])
+
+        self.assertEqual((modo, plataforma), ("viral", "youtube"))
+        self.assertEqual(musicas, [disponivel])
+        self.assertEqual({p.chave for p in SONS_PLATAFORMA},
+                         {"tiktok", "instagram", "youtube"})
+
+    def test_wizard_explica_que_som_viral_nao_e_embutido(self) -> None:
+        html = (RAIZ / "plataforma" / "paginas" / "wizard.html").read_text()
+
+        self.assertIn("Som viral da plataforma", html)
+        self.assertIn("O áudio viral não é embutido no arquivo", html)
+        self.assertIn('data-audio-painel="viral"', html)
 
 
 if __name__ == "__main__":

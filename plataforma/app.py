@@ -24,7 +24,7 @@ from esteira.config import DATA_DIR, RAIZ, Ambiente, carregar_env
 
 from . import (admin, catalogo, contas, fila, google_login, legal, pagamento,
                piloto, planos, seguranca, supabase, temas, uso)
-from .banco import aberto, agora, inserir, preparar, um, varios
+from .banco import aberto, agora, inserir, lista_json, preparar, um, varios
 
 AQUI = Path(__file__).resolve().parent
 AMOSTRAS = DATA_DIR / "saida" / "_amostras"
@@ -518,7 +518,12 @@ async def serie_criar(request: Request, usuario=Depends(exigir)):
             raise HTTPException(400, "Nicho inválido.")
         nicho_texto = conhecido.prompt
 
-    musicas = [m for m in f.getlist("musicas") if isinstance(m, str)]
+    musicas_recebidas = [m for m in f.getlist("musicas") if isinstance(m, str)]
+    modo_musica, plataforma_musica, musicas = catalogo.configurar_musica(
+        str(f.get("modo_musica", "biblioteca")),
+        str(f.get("plataforma_musica", "tiktok")),
+        musicas_recebidas,
+    )
     nome = str(f.get("nome", "")).strip() or (
         catalogo.NICHO_POR_CHAVE[nicho].nome if nicho in catalogo.NICHO_POR_CHAVE
         else "Minha série")
@@ -544,12 +549,14 @@ async def serie_criar(request: Request, usuario=Depends(exigir)):
             return RedirectResponse("/planos?erro=" + quote(str(erro)), status_code=303)
         serie_id = inserir(con, """
             INSERT INTO series (usuario_id, nome, nicho, nicho_texto, idioma, voz,
-                                musicas, estilo, legenda, duracao, modo, modelo_video,
+                                musicas, modo_musica, plataforma_musica,
+                                estilo, legenda, duracao, modo, modelo_video,
                                 piloto_ativo, frequencia, proxima_geracao, criada_em)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """, usuario["id"], nome, nicho, nicho_texto,
              str(f.get("idioma", "pt-BR")), str(f.get("voz", "")),
-             json.dumps(musicas), str(f.get("estilo", "cinematografico")),
+             json.dumps(musicas), modo_musica, plataforma_musica,
+             str(f.get("estilo", "cinematografico")),
              str(f.get("legenda", "traco-forte")), str(f.get("duracao", "curto")),
              modo, modelo_video, int(piloto_ativo), frequencia,
              agora() if piloto_ativo else "",
@@ -573,7 +580,9 @@ def serie(request: Request, serie_id: int, erro: str = "", usuario=Depends(exigi
             SELECT * FROM videos WHERE serie_id=? ORDER BY id DESC LIMIT 40
         """, serie_id)
     return tela(request, "serie.html", serie=linha, pautas=pautas,
-                videos=videos, cat=catalogo, piloto=piloto, erro=erro)
+                videos=videos, cat=catalogo, piloto=piloto, erro=erro,
+                musicas=catalogo.musicas_disponiveis(),
+                musicas_serie=lista_json(linha["musicas"]))
 
 
 @app.post("/series/{serie_id}/direcao")
@@ -583,17 +592,31 @@ async def serie_direcao(request: Request, serie_id: int, usuario=Depends(exigir)
     modelo = str(f.get("modelo_video", "wan"))
     frequencia = str(f.get("frequencia", "semanal"))
     ativo = str(f.get("piloto", "0")) == "1"
+    musicas_recebidas = [m for m in f.getlist("musicas") if isinstance(m, str)]
     if modo not in {"automatico", "imagem", "video"}:
         raise HTTPException(400, "Motor visual inválido.")
     if modelo not in {"wan", "seedance", "kling"}:
         raise HTTPException(400, "Modelo de vídeo inválido.")
     with aberto() as con:
-        linha = um(con, "SELECT id FROM series WHERE id=? AND usuario_id=?",
+        linha = um(con, "SELECT id, musicas FROM series WHERE id=? AND usuario_id=?",
                    serie_id, usuario["id"])
         if linha is None:
             raise HTTPException(404, "Série não encontrada.")
-        con.execute("UPDATE series SET modo=?, modelo_video=? WHERE id=?",
-                    (modo, modelo, serie_id))
+        # A central permite trocar a estratégia sem obrigar a remarcar as
+        # trilhas. Se nenhuma checkbox veio, conserva a seleção já existente.
+        escolhidas = (musicas_recebidas if f.get("musicas_apresentadas") == "1"
+                      else lista_json(linha["musicas"]))
+        modo_musica, plataforma_musica, musicas = catalogo.configurar_musica(
+            str(f.get("modo_musica", "biblioteca")),
+            str(f.get("plataforma_musica", "tiktok")),
+            escolhidas if isinstance(escolhidas, list) else [],
+        )
+        con.execute("""
+            UPDATE series
+               SET modo=?, modelo_video=?, musicas=?, modo_musica=?, plataforma_musica=?
+             WHERE id=?
+        """, (modo, modelo, json.dumps(musicas), modo_musica,
+              plataforma_musica, serie_id))
         piloto.configurar(con, serie_id, ativo, frequencia)
     return RedirectResponse(f"/series/{serie_id}", status_code=303)
 
@@ -618,7 +641,10 @@ async def serie_gerar(request: Request, serie_id: int, usuario=Depends(exigir)):
     tema_id = f.get("tema_id")
     with aberto() as con:
         con.execute("BEGIN IMMEDIATE")
-        linha = um(con, "SELECT id FROM series WHERE id=? AND usuario_id=?",
+        linha = um(con, """
+            SELECT id, modo_musica, plataforma_musica
+              FROM series WHERE id=? AND usuario_id=?
+        """,
                    serie_id, usuario["id"])
         if linha is None:
             raise HTTPException(404, "Série não encontrada.")
@@ -634,9 +660,11 @@ async def serie_gerar(request: Request, serie_id: int, usuario=Depends(exigir)):
         """, tema_num, serie_id) is None:
             raise HTTPException(404, "Pauta não encontrada nesta série.")
         inserir(con, """
-            INSERT INTO videos (serie_id, usuario_id, tema_id, criado_em)
-            VALUES (?,?,?,?)
-        """, serie_id, usuario["id"], tema_num, agora())
+            INSERT INTO videos (serie_id, usuario_id, tema_id, modo_musica,
+                                plataforma_musica, criado_em)
+            VALUES (?,?,?,?,?,?)
+        """, serie_id, usuario["id"], tema_num, linha["modo_musica"],
+             linha["plataforma_musica"], agora())
         con.commit()
     return RedirectResponse(f"/series/{serie_id}", status_code=303)
 
@@ -761,8 +789,10 @@ def estudio(request: Request, video_id: int, usuario=Depends(exigir)):
             "video": bool(midia and midia.suffix.lower() in {".mp4", ".mov", ".webm"}),
         })
         storyboard.append(item)
+    plataforma_som = catalogo.SOM_PLATAFORMA_POR_CHAVE.get(
+        linha["plataforma_musica"] if linha["modo_musica"] == "viral" else "")
     return tela(request, "estudio.html", video=linha, roteiro=roteiro,
-                storyboard=storyboard)
+                storyboard=storyboard, plataforma_som=plataforma_som)
 
 
 @app.get("/videos/{video_id}/cenas/{indice}")

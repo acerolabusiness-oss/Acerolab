@@ -105,6 +105,35 @@
     </label>
     <button class="botao" type="submit">Salvar direção</button>
   </div>
+  <div class="direcao-audio">
+    <div class="direcao-audio-cabeca">
+      <div><span class="selo">Áudio</span><h3>Estratégia sonora do piloto</h3></div>
+      <p>Som viral sai sem trilha para você aplicar a tendência dentro da rede.</p>
+    </div>
+    <div class="direcao-audio-opcoes">
+      <label class="campo"><span>Modo</span>
+        <select name="modo_musica" id="direcao-modo-musica">
+          <option value="biblioteca" {{ 'selected' if serie['modo_musica'] == 'biblioteca' }}>Trilha CC0 automática</option>
+          <option value="viral" {{ 'selected' if serie['modo_musica'] == 'viral' }}>Som viral da plataforma</option>
+          <option value="sem_musica" {{ 'selected' if serie['modo_musica'] == 'sem_musica' }}>Somente narração</option>
+        </select>
+      </label>
+      <label class="campo" data-direcao-audio="viral"><span>Plataforma</span>
+        <select name="plataforma_musica">
+          {% for p in cat.SONS_PLATAFORMA %}
+          <option value="{{ p.chave }}" {{ 'selected' if serie['plataforma_musica'] == p.chave }}>{{ p.nome }} · {{ p.biblioteca }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <div class="trilhas-compactas" data-direcao-audio="biblioteca">
+      <input type="hidden" name="musicas_apresentadas" value="1">
+      {% for m in musicas %}
+      <label><input type="checkbox" name="musicas" value="{{ m.arquivo }}" {{ 'checked' if m.arquivo in musicas_serie }}>
+        <span>{{ m.nome }}{% if m.destaque %}<i>vibe atual</i>{% endif %}</span></label>
+      {% endfor %}
+    </div>
+  </div>
   {% if serie['piloto_ativo'] %}
   <small class="proximo-ciclo">Próximo ciclo: {{ serie['proxima_geracao'][:16]|replace('T', ' ') }} UTC · a franquia e a fila continuam valendo.</small>
   {% endif %}
@@ -195,5 +224,16 @@ tocador.addEventListener('close', () => { fita.pause(); fita.removeAttribute('sr
 
 // Enquanto houver vídeo em produção, a página se atualiza sozinha.
 if (document.querySelector('.fita.fazendo')) setTimeout(() => location.reload(), 5000);
+
+const direcaoModoMusica = document.getElementById('direcao-modo-musica');
+function atualizarDirecaoAudio() {
+  const modo = direcaoModoMusica?.value || 'biblioteca';
+  document.querySelectorAll('[data-direcao-audio]').forEach(bloco => {
+    bloco.hidden = bloco.dataset.direcaoAudio !== modo;
+    bloco.querySelectorAll('input,select').forEach(input => input.disabled = bloco.hidden);
+  });
+}
+direcaoModoMusica?.addEventListener('change', atualizarDirecaoAudio);
+atualizarDirecaoAudio();
 </script>
 {% endblock %}

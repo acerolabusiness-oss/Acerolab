@@ -27,6 +27,24 @@
   </aside>
 
   <main class="storyboard">
+    {% if video['modo_musica'] == 'viral' and plataforma_som %}
+    <section class="entrega-viral">
+      <div class="entrega-viral-icone">↗</div>
+      <div>
+        <span class="selo viva">som viral · {{ plataforma_som.nome }}</span>
+        <h2>Vídeo pronto para receber a tendência</h2>
+        <p>{{ plataforma_som.instrucao }}</p>
+        <small>O MP4 contém a narração, mas não incorpora música protegida.</small>
+      </div>
+      <a class="botao calmo" href="{{ plataforma_som.url }}" target="_blank" rel="noopener">Abrir instruções oficiais</a>
+    </section>
+    {% elif video['modo_musica'] == 'sem_musica' %}
+    <section class="entrega-viral neutra">
+      <div class="entrega-viral-icone">∅</div>
+      <div><span class="selo">somente narração</span><h2>Arquivo sem trilha de fundo</h2>
+        <p>Pronto para publicar assim ou finalizar em outro editor.</p></div>
+    </section>
+    {% endif %}
     <div class="storyboard-cabeca">
       <div><span class="selo">Storyboard</span><h2>{{ storyboard|length }} batidas visuais</h2></div>
       <p>Imagem, movimento, texto e intensidade no mesmo lugar.</p>

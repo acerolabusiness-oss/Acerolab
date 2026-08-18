@@ -169,6 +169,8 @@ class Musica:
     genero: str
     autor: str = ""
     licenca: str = ""
+    vibe: str = ""
+    destaque: bool = False
 
     @property
     def caminho(self) -> Path:
@@ -197,6 +199,16 @@ MUSICAS_CATALOGO: tuple[Musica, ...] = (
            "John Bartmann", "CC0"),
     Musica("horizonte.mp3", "Horizonte", "Motivacional",
            "John Bartmann", "CC0"),
+    Musica("pulso-noturno.mp3", "Pulso noturno", "Hip hop urbano",
+           "Loyalty Freak Music", "CC0", "cortes rápidos", True),
+    Musica("lofi-depois-da-meia-noite.mp3", "Depois da meia-noite", "Lo-fi hip hop",
+           "Loyalty Freak Music", "CC0", "storytelling", True),
+    Musica("rua-em-movimento.mp3", "Rua em movimento", "Hip hop instrumental",
+           "Loyalty Freak Music", "CC0", "listas e curiosidades", True),
+    Musica("neon-acelerado.mp3", "Neon acelerado", "Synthwave / techno",
+           "Loyalty Freak Music", "CC0", "tecnologia e impacto", True),
+    Musica("onda-de-verao.mp3", "Onda de verão", "Chill beat",
+           "Loyalty Freak Music", "CC0", "lifestyle", True),
 )
 
 
@@ -213,6 +225,64 @@ def sortear_musica(escolhidas: list[str]) -> Path | None:
     """
     validas = [m for m in MUSICAS_CATALOGO if m.arquivo in escolhidas and m.existe]
     return random.choice(validas).caminho if validas else None
+
+
+MODOS_MUSICA = frozenset({"biblioteca", "viral", "sem_musica"})
+
+
+@dataclass(frozen=True)
+class SomPlataforma:
+    chave: str
+    nome: str
+    biblioteca: str
+    url: str
+    instrucao: str
+    alcance: str
+
+
+# Música popular muda por país, conta e dia. O ACEROLAB não promete uma faixa
+# específica: prepara o vídeo sem trilha e leva a pessoa ao catálogo comercial
+# oficial, onde a licença é aplicada pela própria plataforma no envio.
+SONS_PLATAFORMA: tuple[SomPlataforma, ...] = (
+    SomPlataforma(
+        "tiktok", "TikTok", "Commercial Music Library",
+        "https://ads.tiktok.com/help/article/how-to-use-the-commercial-music-library?lang=pt",
+        "No TikTok, toque em Adicionar som e escolha uma faixa comercial em alta no Brasil.",
+        "orgânico e anúncios, conforme a faixa",
+    ),
+    SomPlataforma(
+        "instagram", "Instagram", "Meta Sound Collection",
+        "https://www.facebook.com/help/instagram/402084904469945",
+        "No Reels, toque em Áudio e escolha uma faixa liberada para uso comercial.",
+        "Reels, Stories e anúncios",
+    ),
+    SomPlataforma(
+        "youtube", "YouTube Shorts", "Biblioteca de áudio do Shorts",
+        "https://support.google.com/youtube/answer/13053317?hl=pt-BR",
+        "No Shorts, toque em Adicionar som antes de publicar; não reenvie o áudio fora do YouTube.",
+        "Shorts, conforme a licença exibida",
+    ),
+)
+SOM_PLATAFORMA_POR_CHAVE = {p.chave: p for p in SONS_PLATAFORMA}
+
+
+def configurar_musica(modo: str, plataforma: str,
+                      escolhidas: list[str]) -> tuple[str, str, list[str]]:
+    """Valida a estratégia de áudio recebida do formulário.
+
+    O modo viral pode conservar a seleção para uma futura troca de modo, mas
+    a fila ignora essas trilhas: o arquivo sai apenas com narração para a
+    licença da plataforma ser aplicada no momento do upload.
+    """
+    modo = modo if modo in MODOS_MUSICA else "biblioteca"
+    plataforma = plataforma if plataforma in SOM_PLATAFORMA_POR_CHAVE else "tiktok"
+    permitidas = {m.arquivo for m in musicas_disponiveis()}
+    musicas = list(dict.fromkeys(m for m in escolhidas if m in permitidas))
+    if modo == "biblioteca":
+        return modo, "", musicas
+    if modo == "viral":
+        return modo, plataforma, musicas
+    return "sem_musica", "", musicas
 
 
 # ─────────────────────────── estilo visual ───────────────────────────

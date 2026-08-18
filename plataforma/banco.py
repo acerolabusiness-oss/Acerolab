@@ -49,6 +49,8 @@ CREATE TABLE IF NOT EXISTS series (
     idioma         TEXT NOT NULL DEFAULT 'pt-BR',
     voz            TEXT NOT NULL DEFAULT '',
     musicas        TEXT NOT NULL DEFAULT '[]',   -- json: sorteia uma por vídeo
+    modo_musica    TEXT NOT NULL DEFAULT 'biblioteca', -- biblioteca|viral|sem_musica
+    plataforma_musica TEXT NOT NULL DEFAULT '',  -- tiktok|instagram|youtube no modo viral
     estilo         TEXT NOT NULL,
     legenda        TEXT NOT NULL DEFAULT 'traco-forte',
     duracao        TEXT NOT NULL DEFAULT 'curto',
@@ -90,7 +92,9 @@ CREATE TABLE IF NOT EXISTS videos (
     segundos      REAL NOT NULL DEFAULT 0,
     erro          TEXT NOT NULL DEFAULT '',
     criado_em     TEXT NOT NULL,
-    terminado_em  TEXT NOT NULL DEFAULT ''
+    terminado_em  TEXT NOT NULL DEFAULT '',
+    modo_musica   TEXT NOT NULL DEFAULT 'biblioteca',
+    plataforma_musica TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS idx_videos_usuario ON videos(usuario_id, criado_em);
 CREATE INDEX IF NOT EXISTS idx_videos_fila ON videos(estado, criado_em);
@@ -147,6 +151,10 @@ ACRESCIMOS: tuple[tuple[str, str, str], ...] = (
     ("series", "piloto_ativo", "INTEGER NOT NULL DEFAULT 0"),
     ("series", "frequencia", "TEXT NOT NULL DEFAULT 'semanal'"),
     ("series", "proxima_geracao", "TEXT NOT NULL DEFAULT ''"),
+    ("series", "modo_musica", "TEXT NOT NULL DEFAULT 'biblioteca'"),
+    ("series", "plataforma_musica", "TEXT NOT NULL DEFAULT ''"),
+    ("videos", "modo_musica", "TEXT NOT NULL DEFAULT 'biblioteca'"),
+    ("videos", "plataforma_musica", "TEXT NOT NULL DEFAULT ''"),
 )
 
 

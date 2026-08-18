@@ -41,15 +41,17 @@ _parar = threading.Event()
 
 # ───────────────────────── montagem da série ─────────────────────────
 
-def montar_serie(linha: sqlite3.Row) -> Serie:
+def montar_serie(linha: sqlite3.Row, video: sqlite3.Row | None = None) -> Serie:
     """Traduz a linha do banco nos parâmetros que a esteira entende."""
     duracao = catalogo.DURACAO_POR_CHAVE.get(linha["duracao"], catalogo.DURACOES[0])
     estilo = catalogo.ESTILO_POR_CHAVE.get(linha["estilo"])
+    modo_musica = (video["modo_musica"] if video is not None else linha["modo_musica"])
     return Serie(
         nicho=linha["nicho_texto"],
         idioma=linha["idioma"],
         voz=linha["voz"],
-        musica_fundo=catalogo.sortear_musica(lista_json(linha["musicas"])),
+        musica_fundo=(catalogo.sortear_musica(lista_json(linha["musicas"]))
+                      if modo_musica == "biblioteca" else None),
         estilo=estilo.prompt if estilo else catalogo.ESTILOS[0].prompt,
         legenda=True,
         modo=linha["modo"],
@@ -69,7 +71,7 @@ def produzir(con: sqlite3.Connection, video: sqlite3.Row) -> None:
     if linha_serie is None:
         raise RuntimeError("a série deste vídeo não existe mais")
 
-    serie = montar_serie(linha_serie)
+    serie = montar_serie(linha_serie, video)
     custos = Custos(precos=Precos())
     pasta = SAIDA / f"video_{video['id']:06d}"
     pasta.mkdir(parents=True, exist_ok=True)

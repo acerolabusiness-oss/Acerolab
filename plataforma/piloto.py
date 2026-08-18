@@ -80,8 +80,10 @@ def acionar_devidos(con: sqlite3.Connection) -> int:
         else:
             tema_id = int(pauta["id"])
         inserir(con, """
-            INSERT INTO videos (serie_id, usuario_id, tema_id, criado_em)
-            VALUES (?,?,?,?)
-        """, serie["id"], serie["usuario_id"], tema_id, agora())
+            INSERT INTO videos (serie_id, usuario_id, tema_id, modo_musica,
+                                plataforma_musica, criado_em)
+            VALUES (?,?,?,?,?,?)
+        """, serie["id"], serie["usuario_id"], tema_id, serie["modo_musica"],
+             serie["plataforma_musica"], agora())
         criados += 1
     return criados

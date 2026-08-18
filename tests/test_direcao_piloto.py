@@ -9,7 +9,7 @@ from esteira.direcao import cenas_com_movimento
 from esteira.legendas import Palavra, agrupar
 from esteira.render import fatias_por_fala
 from esteira.roteiro import Cena, Roteiro
-from plataforma import piloto
+from plataforma import fila, piloto
 from plataforma.banco import ESQUEMA, agora, inserir, um
 
 
@@ -52,6 +52,20 @@ class DirecaoTest(unittest.TestCase):
         self.assertTrue(all(1 <= len(bloco) <= 4 for bloco in blocos))
         self.assertEqual(sum(map(len, blocos)), len(palavras))
 
+    def test_som_viral_nunca_entra_no_mp4(self):
+        serie = {
+            "nicho_texto": "história", "idioma": "pt-BR", "voz": "",
+            "musicas": '["pulso-noturno.mp3"]', "modo_musica": "biblioteca",
+            "estilo": "cinematografico", "modo": "automatico",
+            "modelo_video": "wan", "duracao": "curto",
+        }
+
+        com_trilha = fila.montar_serie(serie, {"modo_musica": "biblioteca"})
+        para_viral = fila.montar_serie(serie, {"modo_musica": "viral"})
+
+        self.assertIsNotNone(com_trilha.musica_fundo)
+        self.assertIsNone(para_viral.musica_fundo)
+
 
 class PilotoTest(unittest.TestCase):
     def setUp(self):
@@ -87,6 +101,8 @@ class PilotoTest(unittest.TestCase):
         video = um(self.con, "SELECT * FROM videos WHERE serie_id=?", serie)
         self.assertIsNotNone(video)
         self.assertEqual(video["tema_id"], tema)
+        self.assertEqual(video["modo_musica"], "biblioteca")
+        self.assertEqual(video["plataforma_musica"], "")
         relogio = um(self.con, "SELECT proxima_geracao FROM series WHERE id=?", serie)
         self.assertGreater(relogio["proxima_geracao"], agora())
 
