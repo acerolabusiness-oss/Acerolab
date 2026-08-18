@@ -1,0 +1,11 @@
+.git
+.venv
+.env
+.DS_Store
+**/.DS_Store
+**/__pycache__
+*.pyc
+acerolab.db*
+saida
+graphify-out
+**/graphify-out

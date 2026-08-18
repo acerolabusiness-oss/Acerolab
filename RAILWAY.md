@@ -14,6 +14,11 @@ ELEVENLABS_API_KEY=sua_chave_elevenlabs
 GROQ_API_KEY=sua_chave_groq
 SUPABASE_URL=sua_url_supabase
 SUPABASE_ANON_KEY=sua_chave_supabase_anon
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+PUBLIC_URL=https://seu-projeto.up.railway.app
+# caminho do volume persistente montado no Railway
+ACEROLAB_DATA_DIR=/data
 DOLAR=5.00
 ```
 
@@ -22,14 +27,16 @@ DOLAR=5.00
 
 ## Banco de dados
 
-O SQLite fica **local no container** do Railway. Cada restart cria um novo banco (dados são perdidos).
+O banco e os MP4 ficam em `ACEROLAB_DATA_DIR`. Monte um volume persistente do
+Railway em `/data`; sem volume, cada restart perde banco e vídeos.
 
 Para manter dados entre deploys, configure uma postgres no Railway:
 - Adicione "PostgreSQL" no Railway
 - Mude o `plataforma/banco.py` para usar PostgreSQL em vez de SQLite
 - Configure a env var `DATABASE_URL`
 
-Por enquanto, SQLite é ok para MVP.
+SQLite com volume serve para uma instância de MVP. Antes de escalar para mais
+de uma réplica, migre a fila e o banco para Postgres e os MP4 para object storage.
 
 ## Landing page
 

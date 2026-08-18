@@ -171,7 +171,12 @@ A fila roda dentro do mesmo processo, um vídeo por vez.
 
 ## O que ainda não está pronto
 
-Checkout e Pix, agendamento por horário, publicação automática e painel de
+Pix recorrente, agendamento por horário, publicação automática e painel de
 desempenho. As duas últimas dependem de verificação do aplicativo no Google e
 de auditoria do TikTok — processo de meses, que corre em paralelo ao código.
 A ficha técnica com a ordem inteira está em `spec/ficha.html`.
+
+O checkout recorrente por cartão, o portal do cliente e os webhooks assinados
+do Stripe já estão implementados. A geração exige assinatura ativa e respeita a
+franquia mensal do plano; em desenvolvimento, `ACEROLAB_ALLOW_UNPAID=1` libera
+o fluxo sem cobrar.

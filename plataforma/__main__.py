@@ -25,7 +25,8 @@ def main() -> int:
                 # O Railway termina o TLS na borda e encaminha por HTTP puro pro
                 # container: sem isto, request.url.scheme sempre vem "http" e a
                 # URL de volta do login com Google fica errada.
-                proxy_headers=True, forwarded_allow_ips="*")
+                proxy_headers=True,
+                forwarded_allow_ips=os.environ.get("FORWARDED_ALLOW_IPS", "127.0.0.1"))
     return 0
 
 

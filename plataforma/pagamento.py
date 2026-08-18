@@ -23,12 +23,6 @@ import stripe
 
 from .planos import MOEDA, PLANO_POR_CHAVE, Plano
 
-# `card` porque é o único que renova sozinho no Brasil. Quando o Stripe
-# liberar Pix recorrente, ou quando entrar um gateway nacional, é aqui que
-# a lista cresce.
-MEIOS = ["card"]
-
-
 class Recusado(Exception):
     """Erro que pode ser mostrado ao usuário como está."""
 
@@ -37,11 +31,11 @@ def configurado() -> bool:
     return bool(os.environ.get("STRIPE_SECRET_KEY"))
 
 
-def _ligar() -> None:
+def _cliente() -> stripe.StripeClient:
     chave = os.environ.get("STRIPE_SECRET_KEY")
     if not chave:
         raise Recusado("Pagamento ainda não está ligado neste servidor.")
-    stripe.api_key = chave
+    return stripe.StripeClient(chave)
 
 
 def publica() -> str:
@@ -60,31 +54,34 @@ def _etiqueta(plano: Plano, anual: bool) -> str:
 
 def preco(plano: Plano, anual: bool = False) -> str:
     """Devolve o id do preço no Stripe, criando produto e preço se faltarem."""
-    _ligar()
+    cliente = _cliente()
     etiqueta = _etiqueta(plano, anual)
 
-    achados = stripe.Price.list(lookup_keys=[etiqueta], limit=1, active=True)
+    achados = cliente.v1.prices.list({
+        "lookup_keys": [etiqueta], "limit": 1, "active": True})
     if achados.data:
         return achados.data[0].id
 
-    produtos = stripe.Product.search(query=f'metadata["plano"]:"{plano.chave}"', limit=1)
+    produtos = cliente.v1.products.search({
+        "query": f'metadata["plano"]:"{plano.chave}"', "limit": 1})
     if produtos.data:
         produto = produtos.data[0]
     else:
-        produto = stripe.Product.create(
-            name=f"ACEROLAB {plano.nome}",
-            description=f"Uma série · {plano.ritmo} · até {plano.videos_mes} vídeos por mês",
-            metadata={"plano": plano.chave},
-        )
+        produto = cliente.v1.products.create({
+            "name": f"ACEROLAB {plano.nome}",
+            "description": (f"Uma série · {plano.ritmo} · até "
+                            f"{plano.videos_mes} vídeos por mês"),
+            "metadata": {"plano": plano.chave},
+        })
 
-    novo = stripe.Price.create(
-        product=produto.id,
-        currency=MOEDA,
-        unit_amount=plano.centavos_ano if anual else plano.centavos_mes,
-        recurring={"interval": "year" if anual else "month"},
-        lookup_key=etiqueta,
-        metadata={"plano": plano.chave, "ciclo": "ano" if anual else "mes"},
-    )
+    novo = cliente.v1.prices.create({
+        "product": produto.id,
+        "currency": MOEDA,
+        "unit_amount": plano.centavos_ano if anual else plano.centavos_mes,
+        "recurring": {"interval": "year" if anual else "month"},
+        "lookup_key": etiqueta,
+        "metadata": {"plano": plano.chave, "ciclo": "ano" if anual else "mes"},
+    })
     return novo.id
 
 
@@ -101,7 +98,7 @@ def preparar_catalogo() -> dict[str, str]:
 def sessao(plano_chave: str, quantas_series: int, anual: bool,
            email: str, usuario_id: int, volta_ok: str, volta_nao: str) -> str:
     """Cria a sessão de pagamento e devolve a URL para onde mandar a pessoa."""
-    _ligar()
+    cliente = _cliente()
     plano = PLANO_POR_CHAVE.get(plano_chave)
     if plano is None:
         raise Recusado("Plano desconhecido.")
@@ -109,32 +106,36 @@ def sessao(plano_chave: str, quantas_series: int, anual: bool,
         raise Recusado("Escolha de 1 a 50 séries.")
 
     try:
-        s = stripe.checkout.Session.create(
-            mode="subscription",
-            payment_method_types=MEIOS,
-            line_items=[{"price": preco(plano, anual), "quantity": quantas_series}],
-            customer_email=email or None,
-            locale="pt-BR",
-            success_url=volta_ok + "?sessao={CHECKOUT_SESSION_ID}",
-            cancel_url=volta_nao,
+        s = cliente.v1.checkout.sessions.create({
+            "mode": "subscription",
+            # Meios de pagamento são dinâmicos e administrados no Dashboard.
+            "line_items": [{"price": preco(plano, anual), "quantity": quantas_series}],
+            "customer_email": email or None,
+            "locale": "pt-BR",
+            "success_url": volta_ok + "?sessao={CHECKOUT_SESSION_ID}",
+            "cancel_url": volta_nao,
             # O id do usuário volta no webhook: é assim que a gente sabe de
             # quem é a assinatura sem confiar no que a tela mandou.
-            client_reference_id=str(usuario_id),
-            subscription_data={"metadata": {
+            "client_reference_id": str(usuario_id),
+            "subscription_data": {"metadata": {
                 "usuario_id": str(usuario_id),
                 "plano": plano.chave,
                 "series": str(quantas_series),
             }},
-            metadata={"usuario_id": str(usuario_id), "plano": plano.chave},
-        )
+            "metadata": {"usuario_id": str(usuario_id), "plano": plano.chave,
+                         "series": str(quantas_series)},
+            "integration_identifier": os.environ.get(
+                "STRIPE_INTEGRATION_ID", "acerolab_checkout_qhzmdpka"),
+        })
     except stripe.StripeError as erro:                       # noqa: PERF203
         raise Recusado(_humanizar(erro)) from erro
     return s.url
 
 
 def ler_sessao(sessao_id: str) -> dict:
-    _ligar()
-    s = stripe.checkout.Session.retrieve(sessao_id, expand=["subscription"])
+    cliente = _cliente()
+    s = cliente.v1.checkout.sessions.retrieve(
+        sessao_id, {"expand": ["subscription"]})
     assinatura = s.subscription
     meta = (assinatura.metadata or {}) if assinatura else {}
     return {
@@ -156,10 +157,10 @@ def portal(cliente_id: str, volta_para: str) -> str:
     fiscal. O Stripe já faz tudo isso e mantém em dia — refazer aqui seria
     semanas de código para chegar num lugar pior.
     """
-    _ligar()
+    cliente = _cliente()
     try:
-        s = stripe.billing_portal.Session.create(customer=cliente_id,
-                                                 return_url=volta_para)
+        s = cliente.v1.billing_portal.sessions.create({
+            "customer": cliente_id, "return_url": volta_para})
     except stripe.StripeError as erro:
         raise Recusado(_humanizar(erro)) from erro
     return s.url
@@ -173,7 +174,7 @@ def evento(corpo: bytes, assinatura_cabecalho: str):
     Sem essa conferência, qualquer um que descubra a URL pode dizer que
     pagou. O segredo sai no painel do Stripe, em Developers → Webhooks.
     """
-    _ligar()
+    _cliente()  # também falha fechado se o serviço estiver sem credencial
     segredo = os.environ.get("STRIPE_WEBHOOK_SECRET")
     if not segredo:
         raise Recusado("Falta STRIPE_WEBHOOK_SECRET no .env.")

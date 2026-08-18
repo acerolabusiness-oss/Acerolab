@@ -9,6 +9,7 @@ TikTok, e ficam visíveis e desligadas no wizard de propósito.
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from urllib.parse import quote
 from pathlib import Path
@@ -19,13 +20,14 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Redirect
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from esteira.config import RAIZ, Ambiente, carregar_env
+from esteira.config import DATA_DIR, RAIZ, Ambiente, carregar_env
 
-from . import admin, catalogo, contas, fila, google_login, legal, pagamento, planos, supabase, temas
+from . import (admin, catalogo, contas, fila, google_login, legal, pagamento,
+               planos, seguranca, supabase, temas, uso)
 from .banco import aberto, agora, inserir, preparar, um, varios
 
 AQUI = Path(__file__).resolve().parent
-AMOSTRAS = RAIZ / "saida" / "_amostras"
+AMOSTRAS = DATA_DIR / "saida" / "_amostras"
 
 carregar_env()
 preparar()
@@ -33,6 +35,29 @@ preparar()
 app = FastAPI(title="ACEROLAB", docs_url=None, redoc_url=None)
 app.mount("/estatico", StaticFiles(directory=AQUI / "estatico"), name="estatico")
 paginas = Jinja2Templates(directory=str(AQUI / "paginas"))
+
+
+def url_externa(request: Request, rota: str) -> str:
+    """URL canônica sem confiar em cabeçalhos de proxy enviados pelo cliente."""
+    interna = request.url_for(rota)
+    publica = os.environ.get("PUBLIC_URL", "").rstrip("/")
+    return publica + interna.path if publica else str(interna)
+
+
+@app.middleware("http")
+async def protecoes_http(request: Request, call_next):
+    if not seguranca.mesma_origem(request):
+        return JSONResponse({"erro": "Origem da requisição recusada."}, status_code=403)
+    if seguranca.excedeu_limite(request):
+        return seguranca.resposta_limite()
+    resposta = await call_next(request)
+    for nome, valor in seguranca.HEADERS.items():
+        resposta.headers.setdefault(nome, valor)
+    publico_https = os.environ.get("PUBLIC_URL", "").lower().startswith("https://")
+    if request.url.scheme == "https" or publico_https:
+        resposta.headers.setdefault(
+            "Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    return resposta
 
 
 def moeda(valor: float) -> str:
@@ -125,7 +150,8 @@ def _com_sessao(destino: str, usuario_id: int,
     """
     with aberto() as con:
         token = contas.abrir_sessao(con, usuario_id)
-    seguro = bool(request and request.url.scheme == "https")
+    publico_https = os.environ.get("PUBLIC_URL", "").lower().startswith("https://")
+    seguro = publico_https or bool(request and request.url.scheme == "https")
     resposta = RedirectResponse(destino, status_code=303)
     resposta.set_cookie(contas.COOKIE, token, httponly=True, samesite="lax",
                         secure=seguro, max_age=contas.DIAS_DE_SESSAO * 86400)
@@ -192,7 +218,7 @@ def entrar_google(request: Request):
             status_code=303)
 
     estado = google_login.novo_estado()
-    volta = str(request.url_for("entrar_retorno"))
+    volta = url_externa(request, "entrar_retorno")
     resposta = RedirectResponse(google_login.url_login(volta, estado), status_code=303)
     # dura poucos minutos: é só a ida e a volta do Google
     resposta.set_cookie(ESTADO_GOOGLE, estado, httponly=True, samesite="lax",
@@ -214,7 +240,7 @@ def entrar_retorno(request: Request, code: str = "", state: str = "",
             status_code=303)
 
     try:
-        volta = str(request.url_for("entrar_retorno"))
+        volta = url_externa(request, "entrar_retorno")
         pessoa = google_login.trocar_codigo(code, volta)
         with aberto() as con:
             usuario_id, novo = contas.vincular(con, pessoa)
@@ -240,7 +266,7 @@ def esqueci(request: Request, email: str = Form(...)):
     """Manda o e-mail de redefinição. A resposta é sempre a mesma, exista a
     conta ou não — dizer qual e-mail existe entrega a base de clientes."""
     if supabase.configurado():
-        supabase.recuperar(email, str(request.url_for("entrar_tela")))
+        supabase.recuperar(email, url_externa(request, "entrar_tela"))
     return tela(request, "entrar.html", aba="entrar", email=email,
                 recado="Se existir conta com esse e-mail, o link de nova senha já saiu.")
 
@@ -260,10 +286,7 @@ def documento(request: Request):
 # ─────────────────────────── planos e pagamento ──────────────────────
 
 def assinatura_de(con, usuario_id: int):
-    return um(con, """
-        SELECT * FROM assinaturas WHERE usuario_id=? AND estado='ativa'
-         ORDER BY id DESC LIMIT 1
-    """, usuario_id)
+    return uso.assinatura_ativa(con, usuario_id)
 
 
 @app.get("/planos", response_class=HTMLResponse)
@@ -284,8 +307,8 @@ async def assinar(request: Request, usuario=Depends(exigir)):
             anual=bool(f.get("anual")),
             email=usuario["email"],
             usuario_id=int(usuario["id"]),
-            volta_ok=str(request.url_for("pagamento_ok")),
-            volta_nao=str(request.url_for("tela_planos")),
+            volta_ok=url_externa(request, "pagamento_ok"),
+            volta_nao=url_externa(request, "tela_planos"),
         )
     except (pagamento.Recusado, ValueError) as erro:
         return RedirectResponse("/planos?erro=" + quote(str(erro)[:180]), status_code=303)
@@ -315,11 +338,15 @@ def pagamento_ok(request: Request, sessao: str = "", usuario=Depends(exigir)):
     if sessao:
         try:
             dados = pagamento.ler_sessao(sessao)
+            if dados["usuario_id"] != int(usuario["id"]):
+                raise HTTPException(403, "Esta sessão de pagamento pertence a outra conta.")
             if dados["pago"] and dados["assinatura_id"]:
                 with aberto() as con:
                     guardar_assinatura(con, int(usuario["id"]), dados["assinatura_id"],
                                        dados["plano"], dados["series"],
                                        cliente=dados["cliente"])
+        except HTTPException:
+            raise
         except Exception:                                    # noqa: BLE001
             pass       # o webhook resolve; a tela não trava por causa disso
     return RedirectResponse("/series?assinou=1", status_code=303)
@@ -336,7 +363,7 @@ def gerenciar(request: Request, usuario=Depends(exigir)):
         return RedirectResponse("/planos", status_code=303)
     try:
         destino = pagamento.portal(atual["stripe_cliente"],
-                                   str(request.url_for("tela_planos")))
+                                   url_externa(request, "tela_planos"))
     except pagamento.Recusado as erro:
         return RedirectResponse("/planos?erro=" + quote(str(erro)[:180]), status_code=303)
     return RedirectResponse(destino, status_code=303)
@@ -353,16 +380,18 @@ async def webhook(request: Request, stripe_signature: str = Header("")):
     tipo = evento["type"]
     dado = evento["data"]["object"]
 
-    if tipo == "checkout.session.completed":
+    if tipo in ("checkout.session.completed", "checkout.session.async_payment_succeeded"):
         usuario_id = int(dado.get("client_reference_id") or 0)
         assinatura = dado.get("subscription")
-        if usuario_id and assinatura:
+        if usuario_id and assinatura and dado.get("payment_status") != "unpaid":
             with aberto() as con:
                 guardar_assinatura(con, usuario_id, assinatura,
-                                   (dado.get("metadata") or {}).get("plano", ""), 1,
+                                   (dado.get("metadata") or {}).get("plano", ""),
+                                   int((dado.get("metadata") or {}).get("series", 1)),
                                    cliente=str(dado.get("customer") or ""))
 
-    elif tipo in ("customer.subscription.updated", "customer.subscription.deleted"):
+    elif tipo in ("customer.subscription.created", "customer.subscription.updated",
+                  "customer.subscription.deleted"):
         meta = dado.get("metadata") or {}
         estado = {"active": "ativa", "trialing": "ativa",
                   "past_due": "vencida", "unpaid": "vencida"}.get(
@@ -373,6 +402,28 @@ async def webhook(request: Request, stripe_signature: str = Header("")):
             if meta.get("usuario_id") and estado == "ativa":
                 guardar_assinatura(con, int(meta["usuario_id"]), dado["id"],
                                    meta.get("plano", ""), int(meta.get("series", 1)))
+
+    elif tipo in ("invoice.paid", "invoice.payment_failed"):
+        # A versão nova da API moveu a assinatura para `parent`; aceitamos
+        # também o campo antigo para atravessar a migração sem perder evento.
+        assinatura = dado.get("subscription")
+        if not assinatura:
+            detalhes = ((dado.get("parent") or {}).get("subscription_details") or {})
+            assinatura = detalhes.get("subscription")
+        if isinstance(assinatura, dict):
+            assinatura = assinatura.get("id")
+        if assinatura:
+            with aberto() as con:
+                con.execute("UPDATE assinaturas SET estado=? WHERE stripe_id=?",
+                            ("ativa" if tipo == "invoice.paid" else "vencida",
+                             str(assinatura)))
+
+    elif tipo == "checkout.session.async_payment_failed":
+        assinatura = dado.get("subscription")
+        if assinatura:
+            with aberto() as con:
+                con.execute("UPDATE assinaturas SET estado='vencida' WHERE stripe_id=?",
+                            (str(assinatura),))
 
     return JSONResponse({"recebido": True})
 
@@ -473,6 +524,14 @@ async def serie_criar(request: Request, usuario=Depends(exigir)):
         else "Minha série")
 
     with aberto() as con:
+        # A conferência e a criação precisam ser uma operação só: duas
+        # abas abertas não podem ultrapassar o limite ao mesmo tempo.
+        con.execute("BEGIN IMMEDIATE")
+        try:
+            uso.conferir_nova_serie(con, int(usuario["id"]))
+        except uso.Recusado as erro:
+            con.rollback()
+            return RedirectResponse("/planos?erro=" + quote(str(erro)), status_code=303)
         serie_id = inserir(con, """
             INSERT INTO series (usuario_id, nome, nicho, nicho_texto, idioma, voz,
                                 musicas, estilo, legenda, duracao, criada_em)
@@ -482,11 +541,12 @@ async def serie_criar(request: Request, usuario=Depends(exigir)):
              json.dumps(musicas), str(f.get("estilo", "cinematografico")),
              str(f.get("legenda", "traco-forte")), str(f.get("duracao", "curto")),
              agora())
+        con.commit()
     return RedirectResponse(f"/series/{serie_id}", status_code=303)
 
 
 @app.get("/series/{serie_id}", response_class=HTMLResponse)
-def serie(request: Request, serie_id: int, usuario=Depends(exigir)):
+def serie(request: Request, serie_id: int, erro: str = "", usuario=Depends(exigir)):
     with aberto() as con:
         linha = um(con, "SELECT * FROM series WHERE id=? AND usuario_id=?",
                    serie_id, usuario["id"])
@@ -500,7 +560,7 @@ def serie(request: Request, serie_id: int, usuario=Depends(exigir)):
             SELECT * FROM videos WHERE serie_id=? ORDER BY id DESC LIMIT 40
         """, serie_id)
     return tela(request, "serie.html", serie=linha, pautas=pautas,
-                videos=videos, cat=catalogo)
+                videos=videos, cat=catalogo, erro=erro)
 
 
 @app.post("/series/{serie_id}/pautas")
@@ -522,15 +582,27 @@ async def serie_gerar(request: Request, serie_id: int, usuario=Depends(exigir)):
     f = await request.form()
     tema_id = f.get("tema_id")
     with aberto() as con:
+        con.execute("BEGIN IMMEDIATE")
         linha = um(con, "SELECT id FROM series WHERE id=? AND usuario_id=?",
                    serie_id, usuario["id"])
         if linha is None:
             raise HTTPException(404, "Série não encontrada.")
+        try:
+            uso.conferir_novo_video(con, int(usuario["id"]))
+        except uso.Recusado as erro:
+            con.rollback()
+            return RedirectResponse(f"/series/{serie_id}?erro=" + quote(str(erro)),
+                                    status_code=303)
+        tema_num = int(tema_id) if tema_id else None
+        if tema_num is not None and um(con, """
+            SELECT id FROM temas WHERE id=? AND serie_id=? AND estado='proposto'
+        """, tema_num, serie_id) is None:
+            raise HTTPException(404, "Pauta não encontrada nesta série.")
         inserir(con, """
             INSERT INTO videos (serie_id, usuario_id, tema_id, criado_em)
             VALUES (?,?,?,?)
-        """, serie_id, usuario["id"],
-             int(tema_id) if tema_id else None, agora())
+        """, serie_id, usuario["id"], tema_num, agora())
+        con.commit()
     return RedirectResponse(f"/series/{serie_id}", status_code=303)
 
 

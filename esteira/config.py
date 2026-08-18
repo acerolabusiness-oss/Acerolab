@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
-SAIDA = RAIZ / "saida"
 
 
 def _env(chave: str, padrao: str | None = None) -> str | None:
@@ -28,6 +27,13 @@ def carregar_env(caminho: Path | None = None) -> None:
             continue
         chave, valor = linha.split("=", 1)
         os.environ.setdefault(chave.strip(), valor.strip().strip('"').strip("'"))
+
+
+# O diretório persistente também pode vir do .env. Ele precisa ser resolvido
+# depois da leitura, antes de banco e fila importarem estas constantes.
+carregar_env()
+DATA_DIR = Path(os.environ.get("ACEROLAB_DATA_DIR") or str(RAIZ)).expanduser().resolve()
+SAIDA = DATA_DIR / "saida"
 
 
 # ─────────────────────────── preços ───────────────────────────

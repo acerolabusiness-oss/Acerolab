@@ -16,9 +16,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
-from esteira.config import RAIZ
+from esteira.config import DATA_DIR
 
-BANCO = RAIZ / "acerolab.db"
+BANCO = DATA_DIR / "acerolab.db"
 
 ESQUEMA = """
 -- `senha` fica vazia quando a pessoa entrou pelo Google: nesse caso quem
@@ -114,6 +114,7 @@ def agora() -> str:
 
 
 def conectar() -> sqlite3.Connection:
+    BANCO.parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(BANCO, timeout=30, isolation_level=None)
     con.row_factory = sqlite3.Row
     # WAL deixa o worker escrever enquanto a web lê, sem travar um no outro.

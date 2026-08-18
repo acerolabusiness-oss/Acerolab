@@ -49,6 +49,7 @@
 
 {% block corpo %}
 <p class="trilha"><a href="/series">Séries</a> › {{ serie['nome'] }}</p>
+{% if erro %}<p class="erro" role="alert">{{ erro }}</p>{% endif %}
 
 <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">
   <div style="flex:1;min-width:260px">
