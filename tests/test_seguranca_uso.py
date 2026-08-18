@@ -22,6 +22,11 @@ def requisicao(method: str = "POST", path: str = "/series/1/gerar",
 
 
 class SegurancaTest(unittest.TestCase):
+    def test_csp_aceita_midias_e_fontes_embutidas_da_landing(self):
+        csp = seguranca.HEADERS["Content-Security-Policy"]
+        self.assertIn("media-src 'self' data: blob:", csp)
+        self.assertIn("font-src 'self' data:", csp)
+
     def test_recusa_post_de_outro_site(self):
         req = requisicao(headers={"origin": "https://malicioso.test",
                                   "host": "acerolab.test"})

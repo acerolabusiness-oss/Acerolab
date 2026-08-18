@@ -86,8 +86,8 @@ HEADERS = {
     "Referrer-Policy": "strict-origin-when-cross-origin",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
     "Content-Security-Policy": (
-        "default-src 'self'; img-src 'self' data:; media-src 'self'; "
-        "font-src 'self'; style-src 'self' 'unsafe-inline'; "
+        "default-src 'self'; img-src 'self' data:; media-src 'self' data: blob:; "
+        "font-src 'self' data:; style-src 'self' 'unsafe-inline'; "
         "script-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'self'"
     ),
 }
