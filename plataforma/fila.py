@@ -14,12 +14,15 @@ nós e precisam aparecer na conta.
 """
 from __future__ import annotations
 
+import json
 import sqlite3
 import threading
 import time
 import traceback
 from pathlib import Path
 
+from esteira import clipes as etapa_clipes
+from esteira import direcao as etapa_direcao
 from esteira import imagens as etapa_imagens
 from esteira import legenda_png as etapa_legenda_png
 from esteira import legendas as etapa_legendas
@@ -29,7 +32,7 @@ from esteira import roteiro as etapa_roteiro
 from esteira.config import SAIDA, Precos, Serie
 from esteira.custos import Custos
 
-from . import capas, catalogo
+from . import capas, catalogo, piloto
 from .banco import agora, aberto, lista_json, um
 
 PAUSA = 2.0          # segundos entre olhadas na fila quando está vazia
@@ -49,6 +52,8 @@ def montar_serie(linha: sqlite3.Row) -> Serie:
         musica_fundo=catalogo.sortear_musica(lista_json(linha["musicas"])),
         estilo=estilo.prompt if estilo else catalogo.ESTILOS[0].prompt,
         legenda=True,
+        modo=linha["modo"],
+        modelo_video=linha["modelo_video"],
         cenas=duracao.cenas,
     )
 
@@ -81,8 +86,27 @@ def produzir(con: sqlite3.Connection, video: sqlite3.Row) -> None:
     con.execute("UPDATE videos SET titulo = ? WHERE id = ?",
                 (roteiro.titulo, video["id"]))
 
-    _etapa(con, video["id"], "imagens")
-    quadros = etapa_imagens.gerar(roteiro, serie, pasta / "cenas", custos)
+    _etapa(con, video["id"], "direção visual")
+    if serie.modo == "video":
+        quadros = etapa_clipes.gerar(
+            roteiro, serie, pasta / "cenas", custos, modelo=serie.modelo_video)
+    elif serie.modo == "automatico":
+        quadros = etapa_imagens.gerar(roteiro, serie, pasta / "cenas", custos)
+        indices = etapa_direcao.cenas_com_movimento(roteiro)
+        try:
+            movimentos = etapa_clipes.gerar(
+                roteiro, serie, pasta / "cenas", custos,
+                modelo=serie.modelo_video, indices=indices,
+                tolerar_falhas=True)
+            for caminho in movimentos:
+                indice = int(caminho.stem.rsplit("_", 1)[-1])
+                quadros[indice] = caminho
+        except Exception as erro:                           # noqa: BLE001
+            # A automação não perde o vídeo inteiro se a fila de clipes cair:
+            # as imagens já prontas viram o fallback visual daquela execução.
+            print(f"[fila] clipes do vídeo {video['id']} indisponíveis: {erro}")
+    else:
+        quadros = etapa_imagens.gerar(roteiro, serie, pasta / "cenas", custos)
 
     _etapa(con, video["id"], "narração")
     audio, _ = etapa_narracao.gerar(roteiro, serie, pasta / "narracao.mp3", custos)
@@ -93,7 +117,10 @@ def produzir(con: sqlite3.Connection, video: sqlite3.Row) -> None:
         linha_serie["legenda"], catalogo.LEGENDAS[0])
     if etapa_render.tem_libass():
         legenda = etapa_legendas.escrever_ass(
-            palavras, pasta / "legenda.ass", serie.largura, serie.altura)
+            palavras, pasta / "legenda.ass", serie.largura, serie.altura,
+            cor=estilo_legenda.cor, contorno=estilo_legenda.contorno,
+            caixa_alta=estilo_legenda.caixa_alta,
+            divisor_contorno=estilo_legenda.peso_contorno)
     else:
         legenda = etapa_legenda_png.desenhar(
             palavras, pasta / "legenda", serie.largura, serie.altura,
@@ -103,8 +130,12 @@ def produzir(con: sqlite3.Connection, video: sqlite3.Row) -> None:
         )
 
     _etapa(con, video["id"], "montagem")
+    (pasta / "midias.json").write_text(
+        json.dumps([p.name for p in quadros], ensure_ascii=False, indent=2),
+        encoding="utf-8")
     arquivo, segundos_render = etapa_render.montar(
-        quadros, audio, legenda, serie, pasta / "video.mp4")
+        quadros, audio, legenda, serie, pasta / "video.mp4",
+        roteiro=roteiro, palavras=palavras)
 
     custos.registrar("render", "segundos", segundos_render, 0.0,
                      f"{segundos_render:.1f}s de CPU (custo de servidor, não de API)")
@@ -192,6 +223,10 @@ def rodar() -> None:
                 continue
 
             if video is None:
+                try:
+                    piloto.acionar_devidos(con)
+                except Exception:                             # noqa: BLE001
+                    traceback.print_exc()
                 _parar.wait(PAUSA)
                 continue
 

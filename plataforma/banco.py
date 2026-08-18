@@ -56,6 +56,9 @@ CREATE TABLE IF NOT EXISTS series (
     -- de custo é de ~20x por vídeo, por isso o padrão é o barato.
     modo           TEXT NOT NULL DEFAULT 'imagem',
     modelo_video   TEXT NOT NULL DEFAULT 'wan',
+    piloto_ativo   INTEGER NOT NULL DEFAULT 0,
+    frequencia     TEXT NOT NULL DEFAULT 'semanal',
+    proxima_geracao TEXT NOT NULL DEFAULT '',
     criada_em      TEXT NOT NULL,
     arquivada      INTEGER NOT NULL DEFAULT 0
 );
@@ -141,6 +144,9 @@ ACRESCIMOS: tuple[tuple[str, str, str], ...] = (
     ("assinaturas", "renova_em", "TEXT NOT NULL DEFAULT ''"),
     ("series", "modo", "TEXT NOT NULL DEFAULT 'imagem'"),
     ("series", "modelo_video", "TEXT NOT NULL DEFAULT 'wan'"),
+    ("series", "piloto_ativo", "INTEGER NOT NULL DEFAULT 0"),
+    ("series", "frequencia", "TEXT NOT NULL DEFAULT 'semanal'"),
+    ("series", "proxima_geracao", "TEXT NOT NULL DEFAULT ''"),
 )
 
 

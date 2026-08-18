@@ -41,6 +41,7 @@
   <video id="fita-video" controls playsinline preload="none"></video>
   <div class="barra">
     <span class="titulo" id="fita-titulo"></span>
+    <a class="botao" id="fita-estudio" href="#">Abrir estúdio</a>
     <a class="botao calmo" id="fita-baixar" href="#">Baixar</a>
     <button class="botao mudo" style="color:#fff" onclick="tocador.close()">Fechar</button>
   </div>
@@ -66,6 +67,7 @@ if (tocador) {
     fita.src = `/videos/${alvo.dataset.ver}/ver`;
     document.getElementById('fita-titulo').textContent = alvo.dataset.titulo || '';
     document.getElementById('fita-baixar').href = `/videos/${alvo.dataset.ver}/baixar`;
+    document.getElementById('fita-estudio').href = `/videos/${alvo.dataset.ver}/estudio`;
     tocador.showModal();
     fita.play().catch(() => {});
   });

@@ -15,7 +15,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 from .config import RAIZ
-from .legendas import Palavra
+from .legendas import Palavra, agrupar
 
 FONTE = RAIZ / "recursos" / "Outfit.ttf"
 
@@ -44,7 +44,7 @@ def desenhar(palavras: list[Palavra], pasta: Path,
              cor: str = "#FFFFFF", contorno: str = "#000000",
              caixa_alta: bool = True,
              divisor_contorno: int = 10) -> list[tuple[Path, Palavra]]:
-    """Um PNG por palavra, já do tamanho do quadro, com contorno.
+    """Um PNG por instante, com 2–4 palavras e a atual em destaque.
 
     `divisor_contorno` define a grossura do traço em relação ao corpo da
     letra: quanto menor o número, mais grosso o contorno. É o que separa o
@@ -55,23 +55,41 @@ def desenhar(palavras: list[Palavra], pasta: Path,
     traco = max(2, corpo // max(1, divisor_contorno))
     linha_base = int(altura * 0.76)          # acima da UI do TikTok/Reels
     fonte = _fonte(corpo)
-    preenchimento = (*_rgb(cor), 255)
+    base_cor = "#FFFFFF" if cor.upper() != "#FFFFFF" else cor
+    destaque_cor = cor if cor.upper() != "#FFFFFF" else "#FF3B30"
+    preenchimento = (*_rgb(base_cor), 255)
+    destaque = (*_rgb(destaque_cor), 255)
     borda = (*_rgb(contorno), 255)
 
     feitos: list[tuple[Path, Palavra]] = []
-    for i, palavra in enumerate(palavras):
-        texto = palavra.texto.upper() if caixa_alta else palavra.texto
-        quadro = Image.new("RGBA", (largura, altura), (0, 0, 0, 0))
-        pincel = ImageDraw.Draw(quadro)
+    indice = 0
+    for bloco in agrupar(palavras):
+        textos = [p.texto.upper() if caixa_alta else p.texto for p in bloco]
+        for ativa, palavra in enumerate(bloco):
+            quadro = Image.new("RGBA", (largura, altura), (0, 0, 0, 0))
+            pincel = ImageDraw.Draw(quadro)
+            fonte_bloco = fonte
+            espaco = float(pincel.textlength(" ", font=fonte_bloco))
+            larguras = [float(pincel.textlength(t, font=fonte_bloco)) for t in textos]
+            total = sum(larguras) + espaco * (len(textos) - 1)
+            limite = largura * 0.88
+            if total > limite:
+                fonte_bloco = _fonte(max(24, int(corpo * limite / total)))
+                espaco = float(pincel.textlength(" ", font=fonte_bloco))
+                larguras = [float(pincel.textlength(t, font=fonte_bloco)) for t in textos]
+                total = sum(larguras) + espaco * (len(textos) - 1)
+            x = (largura - total) / 2
+            caixa = pincel.textbbox((0, 0), "Ag", font=fonte_bloco, stroke_width=traco)
+            y = linha_base - (caixa[3] - caixa[1]) / 2 - caixa[1]
 
-        caixa = pincel.textbbox((0, 0), texto, font=fonte, stroke_width=traco)
-        x = (largura - (caixa[2] - caixa[0])) // 2 - caixa[0]
-        y = linha_base - (caixa[3] - caixa[1]) // 2 - caixa[1]
+            for i, (texto, largura_texto) in enumerate(zip(textos, larguras)):
+                pincel.text((x, y), texto, font=fonte_bloco,
+                            fill=destaque if i == ativa else preenchimento,
+                            stroke_width=traco, stroke_fill=borda)
+                x += largura_texto + espaco
 
-        pincel.text((x, y), texto, font=fonte, fill=preenchimento,
-                    stroke_width=traco, stroke_fill=borda)
-
-        caminho = pasta / f"palavra_{i:04d}.png"
-        quadro.save(caminho)
-        feitos.append((caminho, palavra))
+            caminho = pasta / f"palavra_{indice:04d}.png"
+            quadro.save(caminho)
+            feitos.append((caminho, palavra))
+            indice += 1
     return feitos

@@ -48,11 +48,17 @@
   {% endfor %}
 </div>
 {% else %}
-<div class="vazio">
-  <h2>Nenhuma série ainda</h2>
-  <p>Uma série é um assunto com voz e visual definidos. Depois de montada, ela passa a
-     propor temas — e nada é gerado sem você mandar.</p>
-  <a class="botao" href="/series/nova">Criar minha primeira série</a>
+<div class="vazio vazio-com-imagens">
+  <div class="vazio-mosaico" aria-hidden="true">
+    <img src="/estatico/mural/q13.webp" alt=""><img src="/estatico/mural/q8.webp" alt=""><img src="/estatico/mural/q4.webp" alt="">
+  </div>
+  <div>
+    <span class="selo viva">Seu primeiro universo</span>
+    <h2>Nenhuma série ainda</h2>
+    <p>Escolha um assunto, uma voz e um visual. A série transforma isso em pautas,
+       imagens e vídeos sem repetir tema.</p>
+    <a class="botao" href="/series/nova">Criar minha primeira série</a>
+  </div>
 </div>
 {% endif %}
 {% endblock %}

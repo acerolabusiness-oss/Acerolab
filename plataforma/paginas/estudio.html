@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block titulo %}Estúdio · {{ video['titulo'] }} · ACEROLAB{% endblock %}
+{% set secao = 'videos' %}
+
+{% block corpo %}
+<p class="trilha"><a href="/videos">Vídeos</a> › Estúdio visual</p>
+<div class="estudio-topo">
+  <div>
+    <span class="selo viva">Direção completa</span>
+    <h1>{{ video['titulo'] or roteiro.get('titulo', 'Vídeo') }}</h1>
+    <p class="legenda-topo">{{ roteiro.get('promessa', video['serie_nome']) }}</p>
+  </div>
+  <div class="estudio-acoes">
+    <a class="botao calmo" href="/series/{{ video['serie_id'] }}">Voltar à série</a>
+    <a class="botao" href="/videos/{{ video['id'] }}/baixar">Baixar MP4</a>
+  </div>
+</div>
+
+<div class="estudio-grade">
+  <aside class="monitor">
+    <video controls playsinline preload="metadata" src="/videos/{{ video['id'] }}/ver"></video>
+    <dl class="ficha-direcao">
+      <div><dt>Paleta</dt><dd>{{ roteiro.get('paleta', 'Direção original') }}</dd></div>
+      <div><dt>Som</dt><dd>{{ roteiro.get('som_ambiente', 'Narração + trilha') }}</dd></div>
+      <div><dt>Motor</dt><dd>{{ 'Híbrido inteligente' if video['modo'] == 'automatico' else video['modo'] }}</dd></div>
+    </dl>
+  </aside>
+
+  <main class="storyboard">
+    <div class="storyboard-cabeca">
+      <div><span class="selo">Storyboard</span><h2>{{ storyboard|length }} batidas visuais</h2></div>
+      <p>Imagem, movimento, texto e intensidade no mesmo lugar.</p>
+    </div>
+    {% for cena in storyboard %}
+    <article class="batida">
+      <div class="batida-num">{{ '%02d'|format(cena['indice'] + 1) }}</div>
+      <div class="batida-midia">
+        {% if cena['tem_midia'] and cena['video'] %}
+        <video muted loop playsinline preload="metadata" src="/videos/{{ video['id'] }}/cenas/{{ cena['indice'] }}"></video>
+        <span class="tipo-midia">clipe</span>
+        {% elif cena['tem_midia'] %}
+        <img loading="lazy" src="/videos/{{ video['id'] }}/cenas/{{ cena['indice'] }}" alt="Cena {{ cena['indice'] + 1 }}">
+        <span class="tipo-midia">imagem</span>
+        {% else %}
+        <span class="sem-cena">sem prévia</span>
+        {% endif %}
+      </div>
+      <div class="batida-texto">
+        <div class="batida-meta">
+          <span>{{ cena.get('papel', 'cena') }}</span>
+          <span>{{ cena.get('plano', 'plano') }}</span>
+          <span class="energia" title="Energia {{ cena.get('energia', 3) }}/5">
+            {% for _ in range(cena.get('energia', 3)) %}<i></i>{% endfor %}
+          </span>
+        </div>
+        <p class="fala">“{{ cena.get('narracao', '') }}”</p>
+        {% if cena.get('movimento') %}<p class="movimento">↳ {{ cena.get('movimento') }}</p>{% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </main>
+</div>
+{% endblock %}
+
+{% block roda_pe %}
+<script>
+const clips = [...document.querySelectorAll('.batida-midia video')];
+const observador = new IntersectionObserver(itens => itens.forEach(item => {
+  if (item.isIntersecting) item.target.play().catch(() => {});
+  else item.target.pause();
+}), {threshold: .55});
+clips.forEach(clip => observador.observe(clip));
+</script>
+{% endblock %}

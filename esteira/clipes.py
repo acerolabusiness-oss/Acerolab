@@ -1,15 +1,14 @@
 """Etapa 2b — cenas em VÍDEO, não em imagem estática.
 
-A diferença de custo entre este arquivo e `imagens.py` é a decisão econômica
-mais importante do projeto:
+A diferença de custo entre este arquivo e `imagens.py` continua sendo uma
+decisão econômica importante:
 
     imagem estática : cobrada por megapixel   → centavos de dólar por vídeo
-    vídeo gerado    : cobrado por SEGUNDO     → dólares por vídeo
+    vídeo gerado    : cobrado por clipe/segundo → varia muito por modelo
 
-No modelo mais barato do mercado (US$ 0,05/s), 35 segundos de vídeo custam
-US$ 1,75 — contra os US$ 0,052 que a tabela do franqueador prevê para o
-vídeo inteiro. É por isso que a esteira roda nos dois modos: para a medição
-comparar lado a lado em vez de discutir no achismo.
+O FastWan atual deixa uma batida curta barata, mas Seedance e Kling ainda
+podem levar um vídeo inteiro a vários dólares. Por isso o modo automático
+aplica clipe só onde o movimento melhora retenção e mede cada execução.
 """
 from __future__ import annotations
 
@@ -22,20 +21,17 @@ import requests
 
 from .config import Serie
 from .custos import Custos
+from .direcao import prompt_movimento
 from .roteiro import Roteiro
 
-# Catálogo do que dá para usar. O preço é por segundo de vídeo gerado.
+# Catálogo do que dá para usar. Cada fornecedor usa uma unidade de cobrança.
 MODELOS: dict[str, dict] = {
     "wan": {
-        "rota": "fal-ai/wan-25-preview/text-to-video",
-        # O Wan cobra POR RESOLUÇÃO, e o código pedia 720p pagando como 480p.
-        # A página do modelo em 16/08/2026: $0,05/s em 480p, $0,10/s em 720p,
-        # $0,15/s em 1080p. A fatura de 7 clipes de 5s em 720p veio $3,50,
-        # que é exatamente 35s x $0,10. Quem mexer na resolução tem que mexer
-        # no preço junto, senão a tela do wizard volta a mentir.
-        "dolar_por_segundo_por_resolucao": {"480p": 0.05, "720p": 0.10, "1080p": 0.15},
-        "dolar_por_segundo": 0.10,      # o que a esteira usa hoje: 720p
-        "nota": "preço conferido na fatura; varia com a resolução",
+        # FastWan 2.2 5B: endpoint atual e muito mais barato para batidas
+        # curtas. A cobrança documentada é por clipe 720p, não por segundo.
+        "rota": "fal-ai/wan/v2.2-5b/text-to-video/fast-wan",
+        "dolar_por_clipe": 0.025,
+        "nota": "até 5s, 720p; preço por clipe",
     },
     "seedance": {
         "rota": "fal-ai/bytedance/seedance/v1/pro/text-to-video",
@@ -52,14 +48,32 @@ MODELOS: dict[str, dict] = {
 
 def _um(prompt: str, serie: Serie, segundos: float, modelo: dict,
         destino: Path, sessao: requests.Session) -> Path:
-    r = sessao.post(
-        f"https://fal.run/{modelo['rota']}",
-        json={
+    if "dolar_por_clipe" in modelo:
+        # 121 quadros a 24 fps = cinco segundos. O limite do modelo é 161;
+        # manter cinco segundos dá material suficiente sem arrastar a batida.
+        quadros = min(121, max(17, 1 + int(round(segundos * 24))))
+        corpo = {
             "prompt": f"{prompt}. {serie.estilo}",
-            "duration": max(5, int(round(segundos))),   # os modelos trabalham em passos de segundo
+            "negative_prompt": (
+                "text, watermark, logo, scene cut, identity change, morphing, "
+                "deformed hands, duplicate subject, flicker, low quality"
+            ),
+            "num_frames": quadros,
+            "frames_per_second": 24,
             "aspect_ratio": "9:16",
             "resolution": "720p",
-        },
+            "enable_prompt_expansion": True,
+        }
+    else:
+        corpo = {
+            "prompt": f"{prompt}. {serie.estilo}",
+            "duration": max(5, int(round(segundos))),
+            "aspect_ratio": "9:16",
+            "resolution": "720p",
+        }
+    r = sessao.post(
+        f"https://fal.run/{modelo['rota']}",
+        json=corpo,
         headers={"Authorization": f"Key {os.environ['FAL_KEY']}"},
         timeout=900,          # geração de vídeo demora minutos, não segundos
     )
@@ -74,33 +88,48 @@ def _um(prompt: str, serie: Serie, segundos: float, modelo: dict,
 
 
 def gerar(roteiro: Roteiro, serie: Serie, pasta: Path, custos: Custos,
-          modelo: str = "wan", segundos_por_cena: float = 5.0) -> list[Path]:
-    """Um clipe de vídeo por cena."""
+          modelo: str = "wan", segundos_por_cena: float = 5.0,
+          indices: list[int] | None = None,
+          tolerar_falhas: bool = False) -> list[Path]:
+    """Gera clipes para todas as cenas ou apenas para os índices pedidos."""
     if modelo not in MODELOS:
         raise ValueError(f"modelo desconhecido: {modelo}. Use um de {list(MODELOS)}")
     spec = MODELOS[modelo]
 
     pasta.mkdir(parents=True, exist_ok=True)
-    caminhos = [pasta / f"cena_{i:02d}.mp4" for i in range(len(roteiro.cenas))]
+    escolhidos = indices if indices is not None else list(range(len(roteiro.cenas)))
+    caminhos = [pasta / f"cena_{i:02d}.mp4" for i in escolhidos]
 
     inicio = time.monotonic()
     with requests.Session() as sessao:
         # menos paralelismo que nas imagens: vídeo é pesado e costuma ter fila
         with futuros.ThreadPoolExecutor(max_workers=2) as pool:
-            tarefas = [
-                pool.submit(_um, cena.imagem, serie, segundos_por_cena,
-                            spec, caminho, sessao)
-                for cena, caminho in zip(roteiro.cenas, caminhos)
-            ]
+            tarefas = {
+                pool.submit(_um, prompt_movimento(roteiro, i), serie,
+                            segundos_por_cena, spec, caminho, sessao): caminho
+                for i, caminho in zip(escolhidos, caminhos)
+            }
+            concluidos: list[Path] = []
             for tarefa in futuros.as_completed(tarefas):
-                tarefa.result()
+                try:
+                    concluidos.append(tarefa.result())
+                except Exception:                         # noqa: BLE001
+                    if not tolerar_falhas:
+                        raise
+            caminhos = [p for p in caminhos if p in concluidos]
     espera = time.monotonic() - inicio
 
     total_segundos = segundos_por_cena * len(caminhos)
-    dolar = total_segundos * spec["dolar_por_segundo"]
-    custos.registrar(
-        "clipes", "segundos", total_segundos, dolar,
-        f"{len(caminhos)} clipes de {segundos_por_cena:.0f}s no {modelo} "
-        f"(US$ {spec['dolar_por_segundo']}/s) — {espera:.0f}s de espera"
-    )
+    if "dolar_por_clipe" in spec:
+        dolar = len(caminhos) * spec["dolar_por_clipe"]
+        preco = f"US$ {spec['dolar_por_clipe']}/clipe"
+    else:
+        dolar = total_segundos * spec["dolar_por_segundo"]
+        preco = f"US$ {spec['dolar_por_segundo']}/s"
+    if caminhos:
+        custos.registrar(
+            "clipes", "segundos", total_segundos, dolar,
+            f"{len(caminhos)} clipes de {segundos_por_cena:.0f}s no {modelo} "
+            f"({preco}) — {espera:.0f}s de espera"
+        )
     return caminhos

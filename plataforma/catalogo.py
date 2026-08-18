@@ -33,6 +33,12 @@ class Nicho:
     prompt: str          # o que o roteirista recebe
     alta: bool = False   # "em alta agora"
 
+    @property
+    def capa(self) -> str:
+        # Cada nicho tem uma direção de arte própria. Não reutilize imagens do
+        # mural aqui: a repetição faz temas diferentes parecerem o mesmo produto.
+        return f"/estatico/nichos/{self.chave}.webp"
+
 
 NICHOS: tuple[Nicho, ...] = (
     Nicho("terror", "Terror",
@@ -212,9 +218,28 @@ class Estilo:
 
     @property
     def miniatura(self) -> str:
-        """Caminho web da miniatura, se ela já foi gerada."""
+        """Amostra real quando existe; referência do acervo como fallback."""
         arq = MINIATURAS / f"{self.chave}.webp"
-        return f"/estatico/estilos/{self.chave}.webp" if arq.exists() else ""
+        if arq.exists():
+            return f"/estatico/estilos/{self.chave}.webp"
+        return f"/estatico/mural/{CAPAS_ESTILO.get(self.chave, 'q8.webp')}"
+
+    @property
+    def miniatura_real(self) -> bool:
+        return (MINIATURAS / f"{self.chave}.webp").exists()
+
+
+CAPAS_ESTILO: dict[str, str] = {
+    "cinematografico": "q2.webp",
+    "terror": "q13.webp",
+    "medieval": "q6.webp",
+    "quadrinhos": "q4.webp",
+    "xilogravura": "q11.webp",
+    "anime": "q7.webp",
+    "render3d": "q1.webp",
+    "fotorrealismo": "q9.webp",
+    "astrofoto": "q8.webp",
+}
 
 
 ESTILOS: tuple[Estilo, ...] = (
@@ -274,8 +299,8 @@ class Duracao:
 
 
 DURACOES: tuple[Duracao, ...] = (
-    Duracao("curto", "30 a 60 segundos", 7),
-    Duracao("longo", "60 a 90 segundos", 11,
+    Duracao("curto", "30 a 60 segundos", 10),
+    Duracao("longo", "60 a 90 segundos", 16,
             "Custa cerca de 1,6x o vídeo curto — mais imagens e mais narração."),
 )
 
@@ -306,11 +331,9 @@ REDES: tuple[Rede, ...] = (
 # A escolha mais cara do produto, e por isso a única que mostra preço na
 # tela. Imagem é foto gerada com zoom lento por cima; vídeo é clipe gerado,
 # cobrado POR SEGUNDO. O número medido numa execução real de 7 cenas foi
-# R$ 0,53 no modo imagem — as estimativas de vídeo saem de `esteira.clipes`
+# R$ 0,69 no modo imagem — as estimativas de vídeo saem de `esteira.clipes`
 # para não existirem dois preços diferentes no mesmo repositório.
 
 CUSTO_BASE_DOLAR = 0.0335   # roteiro + narração + legenda, medido em 16/08/2026
-CUSTO_IMAGEM_DOLAR = 0.0726  # 7 cenas de 2,07 MP a US$ 0,005/MP
+CUSTO_IMAGEM_DOLAR = 0.1037  # 10 cenas de 2,07 MP a US$ 0,005/MP
 DOLAR = 5.00
-
-

@@ -1,7 +1,8 @@
 """Etapa 4 — legendas, com Groq Whisper.
 
-Transcreve a narração já gerada para obter o tempo de cada PALAVRA. É esse
-carimbo por palavra que permite a legenda estilo TikTok, uma palavra por vez.
+Transcreve a narração já gerada para obter o tempo de cada palavra. A tela
+mostra blocos curtos de contexto e destaca a palavra atual — mais legível do
+que fazer cada palavra aparecer sozinha.
 Custa quase nada (US$ 0,04 por hora de áudio).
 """
 from __future__ import annotations
@@ -63,11 +64,48 @@ def _tempo(segundos: float) -> str:
     return f"{h}:{m:02d}:{s:02d}.{cs:02d}"
 
 
+def agrupar(palavras: list[Palavra], maximo: int = 4,
+            duracao_maxima: float = 1.8) -> list[list[Palavra]]:
+    """Agrupa fala em unidades que o olho consegue ler sem perder o ritmo."""
+    blocos: list[list[Palavra]] = []
+    atual: list[Palavra] = []
+    for palavra in palavras:
+        atual.append(palavra)
+        pontua = palavra.texto.rstrip().endswith((".", "!", "?", ":", ";", ","))
+        longa = atual[-1].fim - atual[0].inicio >= duracao_maxima
+        if len(atual) >= maximo or pontua or longa:
+            blocos.append(atual)
+            atual = []
+    if atual:
+        blocos.append(atual)
+    return blocos
+
+
+def _ass_cor(cor: str) -> str:
+    """#RRGGBB para o BGR usado pelo ASS."""
+    valor = cor.lstrip("#")
+    if len(valor) != 6:
+        valor = "FFFFFF"
+    return f"&H00{valor[4:6]}{valor[2:4]}{valor[0:2]}"
+
+
+def _ass_cor_inline(cor: str) -> str:
+    """Cor BGR para uma tag de override dentro do texto ASS."""
+    valor = cor.lstrip("#")
+    if len(valor) != 6:
+        valor = "FFFFFF"
+    return f"&H{valor[4:6]}{valor[2:4]}{valor[0:2]}&"
+
+
 def escrever_ass(palavras: list[Palavra], destino: Path,
-                 largura: int, altura: int) -> Path:
-    """Legenda palavra a palavra, no formato ASS (o ffmpeg queima direto)."""
-    corpo = int(altura * 0.055)
+                 largura: int, altura: int,
+                 cor: str = "#FFFFFF", contorno: str = "#000000",
+                 caixa_alta: bool = True, divisor_contorno: int = 10) -> Path:
+    """Blocos de 2–4 palavras com a palavra falada em destaque."""
+    corpo = int(altura * 0.052)
     margem = int(altura * 0.22)
+    base = "#FFFFFF" if cor.upper() != "#FFFFFF" else cor
+    destaque = cor if cor.upper() != "#FFFFFF" else "#FF3B30"
 
     cabecalho = f"""[Script Info]
 ScriptType: v4.00+
@@ -78,20 +116,30 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, OutlineColour, BackColour, Bold, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Fala,Arial Black,{corpo},&H00FFFFFF,&H00000000,&H00000000,-1,1,{max(3, corpo // 12)},0,2,60,60,{margem},1
+Style: Fala,Arial Black,{corpo},{_ass_cor(base)},{_ass_cor(contorno)},&H00000000,-1,1,{max(3, corpo // max(1, divisor_contorno))},0,2,60,60,{margem},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     linhas = []
-    for p in palavras:
-        # um leve "pop" na entrada dá o ritmo do formato
-        texto = "{\\fscx88\\fscy88\\t(0,90,\\fscx104\\fscy104)\\t(90,150,\\fscx100\\fscy100)}" \
-                + _escapar(p.texto.upper())
-        linhas.append(
-            f"Dialogue: 0,{_tempo(p.inicio)},{_tempo(max(p.fim, p.inicio + 0.08))},"
-            f"Fala,,0,0,0,,{texto}"
-        )
+    for bloco in agrupar(palavras):
+        for ativa, p in enumerate(bloco):
+            partes = []
+            for i, palavra in enumerate(bloco):
+                trecho = palavra.texto.upper() if caixa_alta else palavra.texto
+                if i == ativa:
+                    partes.append(
+                        f"{{\\c{_ass_cor_inline(destaque)}}}{_escapar(trecho)}"
+                        f"{{\\c{_ass_cor_inline(base)}}}"
+                    )
+                else:
+                    partes.append(_escapar(trecho))
+            texto = ("{\\fscx94\\fscy94\\t(0,90,\\fscx100\\fscy100)}" +
+                     " ".join(partes))
+            linhas.append(
+                f"Dialogue: 0,{_tempo(p.inicio)},{_tempo(max(p.fim, p.inicio + 0.08))},"
+                f"Fala,,0,0,0,,{texto}"
+            )
 
     destino.write_text(cabecalho + "\n".join(linhas) + "\n", encoding="utf-8")
     return destino

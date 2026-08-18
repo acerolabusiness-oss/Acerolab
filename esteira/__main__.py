@@ -14,6 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 from . import clipes as etapa_clipes
+from . import direcao as etapa_direcao
 from . import imagens as etapa_imagens
 from . import legenda_png as etapa_legenda_png
 from . import legendas as etapa_legendas
@@ -40,6 +41,20 @@ def um_video(serie: Serie, pasta: Path, precos: Precos, indice: int,
         quadros = etapa_clipes.gerar(roteiro, serie, pasta / "cenas", custos,
                                      modelo=modelo_video,
                                      segundos_por_cena=segundos_por_cena)
+    elif modo == "automatico":
+        print(f"  [{indice}] direção automática...", end="", flush=True)
+        quadros = etapa_imagens.gerar(roteiro, serie, pasta / "cenas", custos)
+        indices = etapa_direcao.cenas_com_movimento(roteiro)
+        try:
+            movimentos = etapa_clipes.gerar(
+                roteiro, serie, pasta / "cenas", custos, modelo=modelo_video,
+                segundos_por_cena=segundos_por_cena, indices=indices,
+                tolerar_falhas=True)
+            for caminho in movimentos:
+                i = int(caminho.stem.rsplit("_", 1)[-1])
+                quadros[i] = caminho
+        except Exception as erro:  # a imagem já gerada é o fallback seguro
+            print(f" clipes indisponíveis ({erro}); usando imagens", end="")
     else:
         print(f"  [{indice}] {len(roteiro.cenas)} imagens...", end="", flush=True)
         quadros = etapa_imagens.gerar(roteiro, serie, pasta / "cenas", custos)
@@ -50,6 +65,7 @@ def um_video(serie: Serie, pasta: Path, precos: Precos, indice: int,
     print(" ok")
 
     legenda = None
+    palavras = []
     if serie.legenda:
         print(f"  [{indice}] legendas...", end="", flush=True)
         palavras = etapa_legendas.transcrever(audio, serie.idioma, custos)
@@ -66,7 +82,8 @@ def um_video(serie: Serie, pasta: Path, precos: Precos, indice: int,
 
     print(f"  [{indice}] render...", end="", flush=True)
     video, segundos = etapa_render.montar(
-        quadros, audio, legenda, serie, pasta / "video.mp4"
+        quadros, audio, legenda, serie, pasta / "video.mp4",
+        roteiro=roteiro, palavras=palavras,
     )
     # Render não custa API, mas custa CPU. Fica registrado com valor zero
     # para aparecer no relatório e ninguém esquecer que existe.
@@ -84,7 +101,7 @@ def main(argv: list[str] | None = None) -> int:
     carregar_env()
     p = argparse.ArgumentParser(prog="esteira", description=__doc__)
     p.add_argument("--nicho", required=True, help="tema da série")
-    p.add_argument("--cenas", type=int, default=7, help="5, 7 ou 9 (padrão: 7)")
+    p.add_argument("--cenas", type=int, default=10, help="batidas visuais (padrão: 10)")
     p.add_argument("--repetir", type=int, default=1, help="quantos vídeos gerar")
     p.add_argument("--largura", type=int, default=1080)
     p.add_argument("--altura", type=int, default=1920)
@@ -98,8 +115,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--musica", type=Path, default=None, help="mp3 de fundo")
     p.add_argument("--sem-legenda", action="store_true")
     p.add_argument("--dolar", type=float, default=5.00)
-    p.add_argument("--modo", choices=["imagem", "video"], default="imagem",
-                   help="cena estática com movimento (imagem) ou clipe gerado (video)")
+    p.add_argument("--modo", choices=["automatico", "imagem", "video"],
+                   default="automatico",
+                   help="direção híbrida, imagem ou clipe em todas as cenas")
     p.add_argument("--modelo-video", choices=list(etapa_clipes.MODELOS),
                    default="wan", help="só vale com --modo video")
     p.add_argument("--segundos-cena", type=float, default=5.0,
@@ -126,8 +144,10 @@ def main(argv: list[str] | None = None) -> int:
     print(f"modo: {args.modo}", end="")
     if args.modo == "video":
         spec = etapa_clipes.MODELOS[args.modelo_video]
-        print(f" ({args.modelo_video}, US$ {spec['dolar_por_segundo']}/s "
-              f"x {args.segundos_cena:.0f}s x {serie.cenas} cenas)")
+        preco = (f"US$ {spec['dolar_por_clipe']}/clipe"
+                 if "dolar_por_clipe" in spec
+                 else f"US$ {spec['dolar_por_segundo']}/s")
+        print(f" ({args.modelo_video}, {preco} x {serie.cenas} cenas)")
     else:
         print("")
     print(f"formato: {serie.largura}x{serie.altura} ({serie.megapixels:.2f} MP por imagem)")

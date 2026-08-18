@@ -43,19 +43,23 @@ def _uma(prompt: str, serie: Serie, destino: Path, sessao: requests.Session) -> 
     return destino
 
 
-def gerar(roteiro: Roteiro, serie: Serie, pasta: Path, custos: Custos) -> list[Path]:
-    """Gera uma imagem por cena. Em paralelo — são chamadas independentes."""
+def gerar(roteiro: Roteiro, serie: Serie, pasta: Path, custos: Custos,
+          indices: list[int] | None = None) -> list[Path]:
+    """Gera as imagens pedidas. Por padrão, uma por cena, em paralelo."""
     pasta.mkdir(parents=True, exist_ok=True)
-    caminhos: list[Path] = [pasta / f"cena_{i:02d}.jpg" for i in range(len(roteiro.cenas))]
+    escolhidos = indices if indices is not None else list(range(len(roteiro.cenas)))
+    caminhos: list[Path] = [pasta / f"cena_{i:02d}.jpg" for i in escolhidos]
 
     with requests.Session() as sessao:
         with futuros.ThreadPoolExecutor(max_workers=4) as pool:
             tarefas = {
                 pool.submit(_uma, cena.imagem, serie, caminho, sessao): caminho
-                for cena, caminho in zip(roteiro.cenas, caminhos)
+                for i, caminho in zip(escolhidos, caminhos)
+                for cena in [roteiro.cenas[i]]
             }
             for tarefa in futuros.as_completed(tarefas):
                 tarefa.result()   # propaga a exceção da thread
 
-    custos.imagem(serie.megapixels, len(caminhos))
+    if caminhos:
+        custos.imagem(serie.megapixels, len(caminhos))
     return caminhos

@@ -6,7 +6,7 @@
 <p class="trilha"><a href="/series">Séries</a> › Criar nova série</p>
 
 <div class="passos" id="passos">
-  {% for _ in range(7) %}<i></i>{% endfor %}
+  {% for _ in range(8) %}<i></i>{% endfor %}
 </div>
 
 <form method="post" action="/series/nova" id="wizard">
@@ -17,20 +17,27 @@
   <p class="legenda-topo">Selecione um pronto ou descreva o seu. A série vai propor um tema
     novo dentro desse assunto toda vez, sem repetir o que já propôs.</p>
 
-  <div class="escolhas">
+  <div class="escolhas nichos-visuais">
     {% for n in cat.NICHOS %}
-    <label class="escolha">
+    <label class="escolha nicho-visual">
       <input type="radio" name="nicho" value="{{ n.chave }}" {% if loop.first %}checked{% endif %} required>
-      <h3>{{ n.nome }}{% if n.alta %} <span class="selo viva">Em alta</span>{% endif %}</h3>
-      <p>{{ n.resumo }}</p>
+      <img class="nicho-capa" src="{{ n.capa }}" alt="Amostra visual de {{ n.nome }}"
+           {% if loop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+      <span class="nicho-conteudo">
+        <h3>{{ n.nome }}{% if n.alta %} <span class="selo viva">Em alta</span>{% endif %}</h3>
+        <p>{{ n.resumo }}</p>
+      </span>
     </label>
     {% endfor %}
-    <label class="escolha">
+    <label class="escolha nicho-visual personalizado">
       <input type="radio" name="nicho" value="personalizado">
-      <h3>Personalizado</h3>
-      <p>Descreva o assunto do seu jeito — quanto mais específico, melhor a pauta.</p>
-      <input type="text" name="nicho_personalizado" style="margin-top:10px"
-             placeholder="ex.: naufrágios brasileiros pouco conhecidos">
+      <span class="nicho-livre"><b>+</b><small>seu universo</small></span>
+      <span class="nicho-conteudo">
+        <h3>Personalizado</h3>
+        <p>Descreva o assunto do seu jeito — quanto mais específico, melhor a pauta.</p>
+        <input type="text" name="nicho_personalizado" style="margin-top:10px"
+               placeholder="ex.: naufrágios brasileiros pouco conhecidos">
+      </span>
     </label>
   </div>
 </section>
@@ -49,20 +56,31 @@
     </select>
   </label>
 
-  <div class="escolhas" style="margin-top:6px">
+  <p class="audio-feedback" id="audio-feedback" role="status" hidden></p>
+
+  <div class="escolhas vozes" style="margin-top:6px">
     {% for v in cat.VOZES %}
-    <label class="escolha">
-      <div class="linha-voz">
-        <input type="radio" name="voz" value="{{ v.id }}" {% if loop.first %}checked{% endif %}>
-        <button type="button" class="tocar" data-voz="{{ v.id }}" aria-label="Ouvir {{ v.nome }}">
-          <svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>
-        </button>
-        <div>
+    <div class="escolha voz-card">
+      <label class="voz-identidade" for="voz-{{ loop.index }}">
+        <input id="voz-{{ loop.index }}" type="radio" name="voz" value="{{ v.id }}"
+               {% if loop.first %}checked{% endif %}>
+        <span class="voz-avatar" aria-hidden="true">{{ v.nome[0] }}</span>
+        <span class="voz-texto">
           <h3>{{ v.nome }} <span class="selo">{{ v.genero }}</span></h3>
           <p>{{ v.tom }}</p>
-        </div>
+        </span>
+      </label>
+      <div class="voz-preview">
+        <button type="button" class="tocar" data-voz="{{ v.id }}"
+                data-rotulo-pronto="Ouvir amostra" aria-label="Ouvir {{ v.nome }}"
+                aria-pressed="false" aria-describedby="voz-status-{{ loop.index }}">
+          <svg class="icone-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z"/></svg>
+          <svg class="icone-pausa" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1h3v10H2zm5 0h3v10H7z"/></svg>
+        </button>
+        <span class="onda-voz" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="voz-status" id="voz-status-{{ loop.index }}">Ouvir amostra</span>
       </div>
-    </label>
+    </div>
     {% endfor %}
   </div>
 </section>
@@ -79,8 +97,10 @@
     <label class="escolha">
       <div class="linha-voz">
         <input type="checkbox" name="musicas" value="{{ m.arquivo }}">
-        <button type="button" class="tocar" data-musica="{{ m.arquivo }}" aria-label="Ouvir {{ m.nome }}">
-          <svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg>
+        <button type="button" class="tocar" data-musica="{{ m.arquivo }}"
+                data-rotulo-pronto="Ouvir trecho" aria-label="Ouvir {{ m.nome }}" aria-pressed="false">
+          <svg class="icone-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z"/></svg>
+          <svg class="icone-pausa" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1h3v10H2zm5 0h3v10H7z"/></svg>
         </button>
         <div><h3>{{ m.nome }}</h3><p>{{ m.genero }}</p></div>
       </div>
@@ -99,30 +119,86 @@
 <!-- ─────────────── 4. estilo visual ─────────────── -->
 <section data-passo hidden>
   <h1>Estilo visual</h1>
-  <p class="legenda-topo">É o estilo das imagens de todas as cenas. Ninguém escolhe às cegas —
-    cada uma abaixo é uma amostra real do estilo.</p>
+  <p class="legenda-topo">É a linguagem das imagens de todas as cenas. Cada opção tem uma
+    referência visual; depois, o Estúdio mostra o resultado real daquela série.</p>
 
   <div class="escolhas colunas">
     {% for e in cat.ESTILOS %}
     <label class="escolha visual">
       <input type="radio" name="estilo" value="{{ e.chave }}" {% if loop.first %}checked{% endif %}>
-      {% if e.miniatura %}
-        <img class="mini" src="{{ e.miniatura }}" alt="Amostra do estilo {{ e.nome }}" loading="lazy">
-      {% else %}
-        <span class="semmini">amostra ainda não gerada<br>
-          <code>python -m plataforma.miniaturas</code></span>
-      {% endif %}
+      <img class="mini" src="{{ e.miniatura }}" alt="Referência visual do estilo {{ e.nome }}" loading="lazy">
+      {% if not e.miniatura_real %}<span class="referencia">referência inicial</span>{% endif %}
       <span class="rotulo">{{ e.nome }}</span>
     </label>
     {% endfor %}
   </div>
 </section>
 
-<!-- ─────────────── 5. legenda ─────────────── -->
+<!-- ─────────────── 5. motor visual e piloto ─────────────── -->
+<section data-passo hidden>
+  <h1>Motor visual</h1>
+  <p class="legenda-topo">Escolha como a direção transforma o roteiro em cena. O automático
+    usa movimento onde ele segura atenção e imagens dirigidas nos respiros.</p>
+
+  <div class="escolhas colunas motores">
+    <label class="escolha motor">
+      <input type="radio" name="modo" value="automatico" checked>
+      <span class="motor-visual automatico">
+        <img src="/estatico/mural/q13.webp" alt=""><img src="/estatico/mural/q8.webp" alt=""><img src="/estatico/mural/q4.webp" alt="">
+        <i>✦</i>
+      </span>
+      <h3>Diretor automático <span class="selo viva">Recomendado</span></h3>
+      <p>Mistura imagens e clipes nos picos. Mais ritmo sem explodir o custo.</p>
+      <small>aprox. 40% das cenas com movimento</small>
+    </label>
+    <label class="escolha motor">
+      <input type="radio" name="modo" value="imagem">
+      <span class="motor-visual"><img src="/estatico/mural/q4.webp" alt=""><i>▧</i></span>
+      <h3>Imagem dirigida</h3>
+      <p>Câmera virtual, cortes mais rápidos e custo mínimo.</p>
+      <small>melhor para volume e testes</small>
+    </label>
+    <label class="escolha motor">
+      <input type="radio" name="modo" value="video">
+      <span class="motor-visual"><img src="/estatico/mural/q9.webp" alt=""><i>▶</i></span>
+      <h3>Vídeo em todas</h3>
+      <p>Cada batida vira clipe. Mais movimento, maior custo e espera.</p>
+      <small>use em produções especiais</small>
+    </label>
+  </div>
+
+  <label class="campo motor-modelo"><span>Modelo dos clipes</span>
+    <select name="modelo_video">
+      <option value="wan">FastWan 2.2 · rápido e econômico</option>
+      <option value="seedance">Seedance · mais detalhe</option>
+      <option value="kling">Kling · qualidade premium</option>
+    </select>
+    <small class="dica">No modo automático ele só roda nas cenas escolhidas pela direção.</small>
+  </label>
+
+  <div class="piloto-escolha">
+    <div>
+      <span class="selo viva">Piloto automático</span>
+      <h2>Deixe a série trabalhar sozinha</h2>
+      <p>Ela escolhe uma pauta inédita, respeita sua franquia e coloca um vídeo por ciclo na fila.</p>
+    </div>
+    <div class="piloto-controles">
+      <label><input type="radio" name="piloto" value="0" checked> Eu aprovo cada tema</label>
+      <label><input type="radio" name="piloto" value="1"> Gerar automaticamente</label>
+      <select name="frequencia" aria-label="Frequência do piloto">
+        <option value="diario">Todo dia</option>
+        <option value="tres_semana">3 vezes por semana</option>
+        <option value="semanal" selected>Toda semana</option>
+      </select>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────── 6. legenda ─────────────── -->
 <section data-passo hidden>
   <h1>Estilo de legenda</h1>
-  <p class="legenda-topo">A legenda aparece palavra por palavra, sincronizada com a narração.
-    É o que segura o olho nos primeiros segundos.</p>
+  <p class="legenda-topo">A legenda mostra frases curtas e destaca a palavra falada.
+    Assim dá para entender o contexto sem perder o ritmo.</p>
 
   <div class="escolhas colunas">
     {% for l in cat.LEGENDAS %}
@@ -227,19 +303,73 @@
     document.querySelector('input[name=nicho][value=personalizado]').checked = true;
   });
 
-  // Prévia de áudio: um tocando por vez.
+  // Prévia de áudio: um tocando por vez e sempre com retorno visível.
   let tocando = null;
+  const audioFeedback = document.getElementById('audio-feedback');
+
+  function statusDo(botao) {
+    return botao.closest('.voz-card')?.querySelector('.voz-status');
+  }
+
+  function limparBotao(botao) {
+    delete botao.dataset.ativo;
+    delete botao.dataset.carregando;
+    botao.setAttribute('aria-pressed', 'false');
+    const status = statusDo(botao);
+    if (status) status.textContent = botao.dataset.rotuloPronto || 'Ouvir amostra';
+  }
+
+  function pararAtual() {
+    if (!tocando) return;
+    const atual = tocando;
+    tocando = null;
+    atual.audio.pause();
+    limparBotao(atual.botao);
+  }
+
   function tocar(url, botao) {
-    if (tocando) { tocando.pause(); tocando = null; }
-    if (botao.dataset.ativo) { delete botao.dataset.ativo; return; }
-    document.querySelectorAll('[data-ativo]').forEach(b => delete b.dataset.ativo);
-    botao.dataset.ativo = '1';
-    tocando = new Audio(url);
-    tocando.play().catch(() => {
-      botao.title = 'Não deu para tocar — confira a chave da ElevenLabs no .env';
-      delete botao.dataset.ativo;
+    const eraOMesmo = tocando?.botao === botao;
+    pararAtual();
+    if (eraOMesmo) return;
+
+    audioFeedback.hidden = true;
+    audioFeedback.textContent = '';
+    botao.dataset.carregando = '1';
+    const status = statusDo(botao);
+    if (status) status.textContent = 'Carregando voz…';
+
+    const audio = new Audio();
+    audio.preload = 'auto';
+    tocando = {audio, botao};
+    const aindaAtual = () => tocando?.audio === audio;
+
+    function falhou() {
+      if (!aindaAtual()) return;
+      tocando = null;
+      limparBotao(botao);
+      if (status) status.textContent = 'Não carregou';
+      audioFeedback.textContent = 'Não consegui carregar esta voz agora. Tente novamente em alguns segundos.';
+      audioFeedback.hidden = false;
+    }
+
+    audio.addEventListener('playing', () => {
+      if (!aindaAtual()) return;
+      delete botao.dataset.carregando;
+      botao.dataset.ativo = '1';
+      botao.setAttribute('aria-pressed', 'true');
+      if (status) status.textContent = 'Tocando agora';
     });
-    tocando.addEventListener('ended', () => delete botao.dataset.ativo);
+    audio.addEventListener('waiting', () => {
+      if (aindaAtual() && status) status.textContent = 'Carregando voz…';
+    });
+    audio.addEventListener('ended', () => {
+      if (!aindaAtual()) return;
+      tocando = null;
+      limparBotao(botao);
+    });
+    audio.addEventListener('error', falhou);
+    audio.src = url;
+    audio.play().catch(falhou);
   }
   document.addEventListener('click', e => {
     const b = e.target.closest('.tocar');

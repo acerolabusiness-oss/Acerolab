@@ -11,6 +11,7 @@ vêm sem libass, e aí `subtitles` e `drawtext` nem existem.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import time
@@ -19,6 +20,7 @@ from pathlib import Path
 
 from .config import Serie
 from .legendas import Palavra
+from .roteiro import Roteiro
 
 FPS = 30
 
@@ -49,50 +51,89 @@ def duracao(midia: Path) -> float:
 
 
 def _fatias(total: float, quantas: int) -> list[float]:
-    """Divide a duração da narração entre as cenas, com um respiro no fim."""
+    """Fallback: divide a duração quando ainda não há marcação da fala."""
+    if quantas <= 0:
+        return []
     base = total / quantas
     fatias = [base] * quantas
-    fatias[-1] += 0.35
     return fatias
 
 
-def _clipe(indice: int, segundos: float, largura: int, altura: int) -> str:
-    """Cena que já é vídeo: enquadra em 9:16 e corta na duração da fatia.
+def fatias_por_fala(roteiro: Roteiro, palavras: list[Palavra],
+                    total: float) -> list[float]:
+    """Alinha a troca de cena à narração escrita e aos timestamps reais."""
+    if not roteiro.cenas or not palavras:
+        return _fatias(total, len(roteiro.cenas))
+    pesos = [max(1, len(re.findall(r"\w+", c.narracao, flags=re.UNICODE)))
+             for c in roteiro.cenas]
+    soma = sum(pesos)
+    limites = [0.0]
+    acumulado = 0
+    for peso in pesos[:-1]:
+        acumulado += peso
+        indice = min(len(palavras) - 1,
+                     max(1, round(acumulado / soma * len(palavras))))
+        anterior = palavras[indice - 1]
+        proxima = palavras[indice]
+        limites.append((anterior.fim + proxima.inicio) / 2)
+    limites.append(total)
+    fatias = [max(0.25, limites[i + 1] - limites[i])
+              for i in range(len(roteiro.cenas))]
+    escala = total / sum(fatias)
+    return [fatia * escala for fatia in fatias]
 
-    `tpad` congela o último quadro caso o clipe seja mais curto que a fatia —
-    sem isso o concat encurta o vídeo e o áudio fica sobrando no fim.
-    """
+
+def _clipe(indice: int, segundos: float, largura: int, altura: int,
+           origem: float) -> str:
+    """Enquadra e retima o clipe até a fala; nunca congela o último quadro."""
+    velocidade = segundos / max(0.1, origem)
     return (f"[{indice}:v]scale={largura}:{altura}:force_original_aspect_ratio=increase,"
-            f"crop={largura}:{altura},fps={FPS},"
-            f"tpad=stop_mode=clone:stop_duration={segundos:.3f},"
-            f"trim=duration={segundos:.3f},setpts=PTS-STARTPTS,setsar=1[v{indice}]")
+            f"crop={largura}:{altura},trim=duration={origem:.3f},"
+            f"setpts={velocidade:.6f}*(PTS-STARTPTS),fps={FPS},"
+            f"trim=duration={segundos:.3f},setsar=1[v{indice}]")
 
 
-def _kenburns(indice: int, segundos: float, largura: int, altura: int) -> str:
-    """Zoom lento alternando aproximar/afastar, para não ficar repetitivo.
-    O scale gigante antes do zoompan é o truque conhecido contra o tremor."""
+def _kenburns(indice: int, segundos: float, largura: int, altura: int,
+              movimento: str = "", energia: int = 3) -> str:
+    """Câmera virtual guiada pela direção da cena, não um zoom repetido."""
     quadros = max(2, int(segundos * FPS))
-    passo = 0.9 / quadros
+    alvo = min(1.19, 1.08 + max(1, min(5, energia)) * 0.018)
+    passo = (alvo - 1.0) / quadros
     if indice % 2 == 0:
-        z = f"min(zoom+{passo:.6f},1.18)"
+        z = f"min(zoom+{passo:.6f},{alvo:.3f})"
     else:
-        z = f"if(lte(zoom,1.0),1.18,max(zoom-{passo:.6f},1.0))"
+        z = f"if(lte(zoom,1.0),{alvo:.3f},max(zoom-{passo:.6f},1.0))"
+    direcao = movimento.lower()
+    progresso = f"on/{max(1, quadros - 1)}"
+    x = "iw/2-(iw/zoom/2)"
+    y = "ih/2-(ih/zoom/2)"
+    if "pan right" in direcao or "left to right" in direcao:
+        x = f"(iw-iw/zoom)*{progresso}"
+    elif "pan left" in direcao or "right to left" in direcao:
+        x = f"(iw-iw/zoom)*(1-{progresso})"
+    elif "tilt up" in direcao or "rises" in direcao:
+        y = f"(ih-ih/zoom)*(1-{progresso})"
+    elif "tilt down" in direcao or "descends" in direcao:
+        y = f"(ih-ih/zoom)*{progresso}"
     return (f"[{indice}:v]scale={largura * 4}:-2,"
             f"zoompan=z='{z}':d={quadros}:"
-            f"x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
+            f"x='{x}':y='{y}':"
             f"s={largura}x{altura}:fps={FPS},setsar=1[v{indice}]")
 
 
 def montar(imagens: list[Path], audio: Path,
            legenda: Path | list[tuple[Path, Palavra]] | None,
-           serie: Serie, destino: Path) -> tuple[Path, float]:
+           serie: Serie, destino: Path,
+           roteiro: Roteiro | None = None,
+           palavras: list[Palavra] | None = None) -> tuple[Path, float]:
     """Junta tudo num MP4 vertical. Devolve (arquivo, segundos de render).
 
     `legenda` aceita um .ass (quando há libass) ou a lista de PNGs por palavra.
     """
     inicio = time.monotonic()
     total = duracao(audio)
-    fatias = _fatias(total, len(imagens))
+    fatias = (fatias_por_fala(roteiro, palavras, total)
+              if roteiro is not None and palavras else _fatias(total, len(imagens)))
     L, A = serie.largura, serie.altura
 
     # Cena pode ser imagem estática (precisa de -loop) ou clipe de vídeo.
@@ -123,10 +164,14 @@ def montar(imagens: list[Path], audio: Path,
         for caminho, _ in palavras_png:
             cmd += ["-i", str(caminho)]
 
-    partes = [
-        (_clipe if video else _kenburns)(i, seg, L, A)
-        for i, (seg, video) in enumerate(zip(fatias, e_video))
-    ]
+    partes = []
+    for i, (cena, seg, video) in enumerate(zip(imagens, fatias, e_video)):
+        if video:
+            partes.append(_clipe(i, seg, L, A, duracao(cena)))
+        else:
+            movimento = roteiro.cenas[i].movimento if roteiro else ""
+            energia = roteiro.cenas[i].energia if roteiro else 3
+            partes.append(_kenburns(i, seg, L, A, movimento, energia))
     entradas = "".join(f"[v{i}]" for i in range(len(imagens)))
     partes.append(f"{entradas}concat=n={len(imagens)}:v=1:a=0[vcat]")
 

@@ -5,6 +5,8 @@ precisa de parser defensivo nem de retry por JSON malformado.
 """
 from __future__ import annotations
 
+from typing import Literal
+
 import anthropic
 from pydantic import BaseModel, Field
 
@@ -25,17 +27,30 @@ Regras da narração:
   idioma. "Henrique I da Inglaterra", nunca "Henrique the First". Não
   misture dois idiomas na mesma frase — quem ouve não lê legenda.
 
-Regras do prompt de imagem:
+Regras de DIREÇÃO VISUAL:
 - O prompt de imagem — e só ele — vai em inglês, porque os modelos de
   imagem respondem melhor. Isso não vale para a narração.
-- Descreva a CENA concreta: sujeito, ação, ambiente, enquadramento, luz.
+- Pense em batidas visuais de 2 a 4 segundos. As duas primeiras cenas formam
+  juntas o gancho: a primeira interrompe o padrão; a segunda prova a promessa.
+- Descreva uma AÇÃO concreta acontecendo agora: sujeito, verbo, ambiente,
+  enquadramento, lente, luz e detalhes historicamente corretos. Evite retrato
+  central parado, pessoa apenas olhando para a câmera e composição genérica.
+- Varie deliberadamente plano geral, detalhe macro, ponto de vista, plongée,
+  contra-plongée e silhueta. Cenas vizinhas não podem repetir o mesmo plano.
 - Nada de texto na imagem, nada de logotipo, nada de marca d'água.
-- Enquadramento vertical, o sujeito ocupando o terço central.
+- Enquadramento vertical 9:16. Deixe área negativa útil para a legenda na
+  faixa inferior sem esconder a ação principal.
 - Se um personagem aparece em mais de uma cena, a descrição física completa
   (rosto, cabelo, roupa, cores, acessórios) deve ser idêntica no prompt de
   imagem de cada cena em que ele aparece — palavra por palavra — para que o
   modelo de imagem, que gera cada cena isoladamente, o reconheça como a mesma
   pessoa.
+- O campo movimento também vai em inglês e descreve câmera + movimento do
+  sujeito, de modo filmável, curto e sem trocar a identidade do personagem.
+- energia vai de 1 (respiro) a 5 (pico). papel é a função daquela batida na
+  história. Cada vídeo precisa alternar intensidade, não ficar inteiro no 5.
+- Defina uma paleta visual curta e mantenha-a em todos os prompts. O resultado
+  deve parecer um filme dirigido, não imagens independentes de bancos diferentes.
 """
 
 
@@ -57,10 +72,21 @@ IDIOMAS: dict[str, str] = {
 class Cena(BaseModel):
     narracao: str = Field(description="O que a voz fala nesta cena, em uma ou duas frases.")
     imagem: str = Field(description="Prompt de imagem em inglês descrevendo a cena.")
+    movimento: str = Field(
+        description="Direção de câmera e movimento do sujeito, em inglês.")
+    plano: Literal["geral", "medio", "close", "detalhe", "pov", "aereo"] = Field(
+        description="Enquadramento dominante desta batida visual.")
+    papel: Literal["gancho", "prova", "contexto", "virada", "escalada", "final"] = Field(
+        description="Função narrativa desta cena.")
+    energia: int = Field(ge=1, le=5, description="Intensidade visual de 1 a 5.")
 
 
 class Roteiro(BaseModel):
     titulo: str = Field(description="Título curto para a publicação.")
+    promessa: str = Field(description="A promessa do gancho em uma frase curta.")
+    paleta: str = Field(description="Paleta consistente, em inglês, com 3 a 5 cores e luz.")
+    som_ambiente: str = Field(
+        description="Descrição curta, em inglês, de um som ambiente que combina com o vídeo.")
     cenas: list[Cena]
 
 
@@ -83,6 +109,8 @@ def gerar(serie: Serie, custos: Custos, assunto: str | None = None) -> Roteiro:
                 f"{serie.cenas} cenas. Estilo visual da série: {serie.estilo}. "
                 f"Escolha um ângulo específico e pouco óbvio dentro do nicho — "
                 f"não o tema mais previsível."
+                f" A primeira cena precisa ser compreendida sem áudio e todas as cenas "
+                f"devem incluir a mesma paleta no prompt de imagem."
             ),
         }],
         output_format=Roteiro,

@@ -2,7 +2,7 @@
 {% block titulo %}{{ serie['nome'] }} · ACEROLAB{% endblock %}
 {% set secao = 'series' %}
 
-{% set ETAPAS = ['roteiro', 'imagens', 'narração', 'legendas', 'montagem', 'capa'] %}
+{% set ETAPAS = ['roteiro', 'direção visual', 'narração', 'legendas', 'montagem', 'capa'] %}
 
 {% macro fita(v) %}
   {% if v['estado'] == 'pronto' %}
@@ -58,13 +58,57 @@
       {{ cat.NICHO_POR_CHAVE[serie['nicho']].nome if serie['nicho'] in cat.NICHO_POR_CHAVE else 'Personalizado' }} ·
       {{ cat.IDIOMA_POR_CODIGO[serie['idioma']].nome if serie['idioma'] in cat.IDIOMA_POR_CODIGO else serie['idioma'] }} ·
       {{ cat.ESTILO_POR_CHAVE[serie['estilo']].nome if serie['estilo'] in cat.ESTILO_POR_CHAVE else serie['estilo'] }} ·
-      {{ cat.DURACAO_POR_CHAVE[serie['duracao']].nome if serie['duracao'] in cat.DURACAO_POR_CHAVE else serie['duracao'] }}
+      {{ cat.DURACAO_POR_CHAVE[serie['duracao']].nome if serie['duracao'] in cat.DURACAO_POR_CHAVE else serie['duracao'] }} ·
+      {{ 'Diretor automático' if serie['modo'] == 'automatico' else ('Vídeo em todas' if serie['modo'] == 'video' else 'Imagem dirigida') }}
     </p>
   </div>
   <form method="post" action="/series/{{ serie['id'] }}/pautas">
     <button class="botao calmo" type="submit">Propor temas</button>
   </form>
 </div>
+
+<form class="direcao-painel" method="post" action="/series/{{ serie['id'] }}/direcao">
+  <div class="direcao-cabeca">
+    <div class="orbita"><i></i><i></i><i></i><b>AI</b></div>
+    <div>
+      <span class="selo {{ 'viva' if serie['piloto_ativo'] else '' }}">{{ 'Piloto ligado' if serie['piloto_ativo'] else 'Direção IA' }}</span>
+      <h2>Central criativa da série</h2>
+      <p>Controle o motor visual e decida se a série produz sozinha.</p>
+    </div>
+  </div>
+  <div class="direcao-controles">
+    <label class="campo"><span>Motor visual</span>
+      <select name="modo">
+        <option value="automatico" {{ 'selected' if serie['modo'] == 'automatico' }}>Diretor automático</option>
+        <option value="imagem" {{ 'selected' if serie['modo'] == 'imagem' }}>Imagem dirigida</option>
+        <option value="video" {{ 'selected' if serie['modo'] == 'video' }}>Vídeo em todas</option>
+      </select>
+    </label>
+    <label class="campo"><span>Modelo dos clipes</span>
+      <select name="modelo_video">
+        <option value="wan" {{ 'selected' if serie['modelo_video'] == 'wan' }}>FastWan 2.2</option>
+        <option value="seedance" {{ 'selected' if serie['modelo_video'] == 'seedance' }}>Seedance</option>
+        <option value="kling" {{ 'selected' if serie['modelo_video'] == 'kling' }}>Kling</option>
+      </select>
+    </label>
+    <label class="campo"><span>Ritmo do piloto</span>
+      <select name="frequencia">
+        {% for chave, nome in piloto.NOMES.items() %}
+        <option value="{{ chave }}" {{ 'selected' if serie['frequencia'] == chave }}>{{ nome }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="chave-piloto">
+      <input type="checkbox" name="piloto" value="1" {{ 'checked' if serie['piloto_ativo'] }}>
+      <span><i></i></span>
+      <b>Produzir sozinho</b>
+    </label>
+    <button class="botao" type="submit">Salvar direção</button>
+  </div>
+  {% if serie['piloto_ativo'] %}
+  <small class="proximo-ciclo">Próximo ciclo: {{ serie['proxima_geracao'][:16]|replace('T', ' ') }} UTC · a franquia e a fila continuam valendo.</small>
+  {% endif %}
+</form>
 
 <!-- ───────── pautas esperando ───────── -->
 <h2 style="font-size:15px;margin:26px 0 4px">Temas propostos</h2>
@@ -76,17 +120,24 @@
 <div class="pautas">
   {% for p in pautas %}
   <article class="cartaz">
-    <div class="aspas">“</div>
-    <h3>{{ p['titulo'] }}</h3>
-    <p class="gancho">{{ p['gancho'] }}</p>
-    <div class="pe">
-      <form method="post" action="/pautas/{{ p['id'] }}/descartar">
-        <button class="botao mudo" type="submit">Descartar</button>
-      </form>
-      <form method="post" action="/series/{{ serie['id'] }}/gerar">
-        <input type="hidden" name="tema_id" value="{{ p['id'] }}">
-        <button class="botao" type="submit">Gerar vídeo</button>
-      </form>
+    {% set nicho_atual = cat.NICHO_POR_CHAVE.get(serie['nicho']) %}
+    <div class="pauta-visual">
+      <img src="{{ nicho_atual.capa if nicho_atual else '/estatico/mural/q8.webp' }}" alt="" loading="lazy">
+      <span class="selo">prévia do universo</span>
+    </div>
+    <div class="cartaz-miolo">
+      <div class="aspas">“</div>
+      <h3>{{ p['titulo'] }}</h3>
+      <p class="gancho">{{ p['gancho'] }}</p>
+      <div class="pe">
+        <form method="post" action="/pautas/{{ p['id'] }}/descartar">
+          <button class="botao mudo" type="submit">Descartar</button>
+        </form>
+        <form method="post" action="/series/{{ serie['id'] }}/gerar">
+          <input type="hidden" name="tema_id" value="{{ p['id'] }}">
+          <button class="botao" type="submit">Gerar vídeo</button>
+        </form>
+      </div>
     </div>
   </article>
   {% endfor %}
@@ -116,6 +167,7 @@
   <video id="fita-video" controls playsinline preload="none"></video>
   <div class="barra">
     <span class="titulo" id="fita-titulo"></span>
+    <a class="botao" id="fita-estudio" href="#">Abrir estúdio</a>
     <a class="botao calmo" id="fita-baixar" href="#">Baixar</a>
     <button class="botao mudo" style="color:#fff" onclick="tocador.close()">Fechar</button>
   </div>
@@ -135,6 +187,7 @@ document.addEventListener('click', e => {
   fita.src = `/videos/${id}/ver`;
   document.getElementById('fita-titulo').textContent = alvo.dataset.titulo || '';
   document.getElementById('fita-baixar').href = `/videos/${id}/baixar`;
+  document.getElementById('fita-estudio').href = `/videos/${id}/estudio`;
   tocador.showModal();
   fita.play().catch(() => {});
 });

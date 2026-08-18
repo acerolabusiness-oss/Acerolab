@@ -72,8 +72,13 @@ class Serie:
     estilo: str = "cinematográfico, iluminação dramática, alto contraste"
     legenda: bool = True
 
+    # motor visual: no automático a direção escolhe onde movimento realmente
+    # acrescenta valor e mantém imagens nas cenas de respiro.
+    modo: str = "automatico"             # automatico | imagem | video
+    modelo_video: str = "wan"
+
     # ritmo/duração
-    cenas: int = 7                     # 5 / 7 / 9, como na tabela de custo
+    cenas: int = 10                    # cortes curtos; ritmo vem da fala
     largura: int = 1080
     altura: int = 1920
 

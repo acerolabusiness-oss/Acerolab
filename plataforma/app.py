@@ -23,7 +23,7 @@ from fastapi.templating import Jinja2Templates
 from esteira.config import DATA_DIR, RAIZ, Ambiente, carregar_env
 
 from . import (admin, catalogo, contas, fila, google_login, legal, pagamento,
-               planos, seguranca, supabase, temas, uso)
+               piloto, planos, seguranca, supabase, temas, uso)
 from .banco import aberto, agora, inserir, preparar, um, varios
 
 AQUI = Path(__file__).resolve().parent
@@ -522,6 +522,16 @@ async def serie_criar(request: Request, usuario=Depends(exigir)):
     nome = str(f.get("nome", "")).strip() or (
         catalogo.NICHO_POR_CHAVE[nicho].nome if nicho in catalogo.NICHO_POR_CHAVE
         else "Minha série")
+    modo = str(f.get("modo", "automatico"))
+    if modo not in {"automatico", "imagem", "video"}:
+        modo = "automatico"
+    modelo_video = str(f.get("modelo_video", "wan"))
+    if modelo_video not in {"wan", "seedance", "kling"}:
+        modelo_video = "wan"
+    piloto_ativo = str(f.get("piloto", "0")) == "1"
+    frequencia = str(f.get("frequencia", "semanal"))
+    if frequencia not in piloto.INTERVALOS:
+        frequencia = "semanal"
 
     with aberto() as con:
         # A conferência e a criação precisam ser uma operação só: duas
@@ -534,12 +544,15 @@ async def serie_criar(request: Request, usuario=Depends(exigir)):
             return RedirectResponse("/planos?erro=" + quote(str(erro)), status_code=303)
         serie_id = inserir(con, """
             INSERT INTO series (usuario_id, nome, nicho, nicho_texto, idioma, voz,
-                                musicas, estilo, legenda, duracao, criada_em)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                                musicas, estilo, legenda, duracao, modo, modelo_video,
+                                piloto_ativo, frequencia, proxima_geracao, criada_em)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """, usuario["id"], nome, nicho, nicho_texto,
              str(f.get("idioma", "pt-BR")), str(f.get("voz", "")),
              json.dumps(musicas), str(f.get("estilo", "cinematografico")),
              str(f.get("legenda", "traco-forte")), str(f.get("duracao", "curto")),
+             modo, modelo_video, int(piloto_ativo), frequencia,
+             agora() if piloto_ativo else "",
              agora())
         con.commit()
     return RedirectResponse(f"/series/{serie_id}", status_code=303)
@@ -560,7 +573,29 @@ def serie(request: Request, serie_id: int, erro: str = "", usuario=Depends(exigi
             SELECT * FROM videos WHERE serie_id=? ORDER BY id DESC LIMIT 40
         """, serie_id)
     return tela(request, "serie.html", serie=linha, pautas=pautas,
-                videos=videos, cat=catalogo, erro=erro)
+                videos=videos, cat=catalogo, piloto=piloto, erro=erro)
+
+
+@app.post("/series/{serie_id}/direcao")
+async def serie_direcao(request: Request, serie_id: int, usuario=Depends(exigir)):
+    f = await request.form()
+    modo = str(f.get("modo", "automatico"))
+    modelo = str(f.get("modelo_video", "wan"))
+    frequencia = str(f.get("frequencia", "semanal"))
+    ativo = str(f.get("piloto", "0")) == "1"
+    if modo not in {"automatico", "imagem", "video"}:
+        raise HTTPException(400, "Motor visual inválido.")
+    if modelo not in {"wan", "seedance", "kling"}:
+        raise HTTPException(400, "Modelo de vídeo inválido.")
+    with aberto() as con:
+        linha = um(con, "SELECT id FROM series WHERE id=? AND usuario_id=?",
+                   serie_id, usuario["id"])
+        if linha is None:
+            raise HTTPException(404, "Série não encontrada.")
+        con.execute("UPDATE series SET modo=?, modelo_video=? WHERE id=?",
+                    (modo, modelo, serie_id))
+        piloto.configurar(con, serie_id, ativo, frequencia)
+    return RedirectResponse(f"/series/{serie_id}", status_code=303)
 
 
 @app.post("/series/{serie_id}/pautas")
@@ -675,6 +710,83 @@ def ver(request: Request, video_id: int, usuario=Depends(exigir)):
     if not arquivo.exists():
         raise HTTPException(410, "O arquivo desse vídeo não está mais no disco.")
     return FileResponse(arquivo, media_type="video/mp4")
+
+
+def _midias_da_pasta(pasta: Path, quantas: int) -> list[Path | None]:
+    """Recupera exatamente a mídia usada em cada cena, inclusive no híbrido."""
+    arquivo_lista = pasta / "midias.json"
+    nomes: list[str] = []
+    if arquivo_lista.exists():
+        try:
+            dados = json.loads(arquivo_lista.read_text(encoding="utf-8"))
+            if isinstance(dados, list):
+                nomes = [Path(str(nome)).name for nome in dados]
+        except (OSError, json.JSONDecodeError):
+            nomes = []
+    resultado: list[Path | None] = []
+    cenas = pasta / "cenas"
+    for indice in range(quantas):
+        candidato = cenas / nomes[indice] if indice < len(nomes) else None
+        if candidato is None or not candidato.exists():
+            opcoes = sorted(cenas.glob(f"cena_{indice:02d}.*"),
+                            key=lambda p: p.suffix.lower() not in {".mp4", ".mov", ".webm"})
+            candidato = opcoes[0] if opcoes else None
+        resultado.append(candidato)
+    return resultado
+
+
+@app.get("/videos/{video_id}/estudio", response_class=HTMLResponse)
+def estudio(request: Request, video_id: int, usuario=Depends(exigir)):
+    with aberto() as con:
+        linha = um(con, """
+            SELECT v.*, s.nome AS serie_nome, s.modo
+              FROM videos v JOIN series s ON s.id=v.serie_id
+             WHERE v.id=? AND v.usuario_id=?
+        """, video_id, usuario["id"])
+    if linha is None or linha["estado"] != "pronto" or not linha["pasta"]:
+        raise HTTPException(404, "Vídeo não disponível no estúdio.")
+    roteiro_arquivo = Path(linha["pasta"]) / "roteiro.json"
+    try:
+        roteiro = json.loads(roteiro_arquivo.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        raise HTTPException(410, "A direção deste vídeo não está mais no disco.")
+    cenas = roteiro.get("cenas", []) if isinstance(roteiro, dict) else []
+    midias = _midias_da_pasta(Path(linha["pasta"]), len(cenas))
+    storyboard = []
+    for indice, (cena, midia) in enumerate(zip(cenas, midias)):
+        item = dict(cena) if isinstance(cena, dict) else {}
+        item.update({
+            "indice": indice,
+            "tem_midia": midia is not None,
+            "video": bool(midia and midia.suffix.lower() in {".mp4", ".mov", ".webm"}),
+        })
+        storyboard.append(item)
+    return tela(request, "estudio.html", video=linha, roteiro=roteiro,
+                storyboard=storyboard)
+
+
+@app.get("/videos/{video_id}/cenas/{indice}")
+def cena_midia(request: Request, video_id: int, indice: int,
+               usuario=Depends(exigir)):
+    with aberto() as con:
+        linha = um(con, "SELECT pasta FROM videos WHERE id=? AND usuario_id=?",
+                   video_id, usuario["id"])
+    if linha is None or not linha["pasta"] or indice < 0:
+        raise HTTPException(404)
+    roteiro = Path(linha["pasta"]) / "roteiro.json"
+    try:
+        quantas = len(json.loads(roteiro.read_text(encoding="utf-8")).get("cenas", []))
+    except (OSError, json.JSONDecodeError, AttributeError):
+        raise HTTPException(404)
+    if indice >= quantas:
+        raise HTTPException(404)
+    midia = _midias_da_pasta(Path(linha["pasta"]), quantas)[indice]
+    if midia is None or not midia.exists():
+        raise HTTPException(404)
+    tipos = {".mp4": "video/mp4", ".webm": "video/webm", ".png": "image/png",
+             ".webp": "image/webp", ".jpg": "image/jpeg", ".jpeg": "image/jpeg"}
+    return FileResponse(midia, media_type=tipos.get(midia.suffix.lower(), "application/octet-stream"),
+                        headers={"Cache-Control": "private, max-age=86400"})
 
 
 @app.get("/api/estado")
