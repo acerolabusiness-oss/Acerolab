@@ -89,16 +89,22 @@ class CatalogoVisualTest(unittest.TestCase):
 
     def test_wizard_simplifica_inicio_e_conserva_padrao_automatico(self) -> None:
         html = (RAIZ / "plataforma" / "paginas" / "wizard.html").read_text()
+        boas_vindas = (RAIZ / "plataforma" / "paginas" / "comecar.html").read_text()
 
         self.assertEqual(html.count("<section data-passo hidden>"), 4)
         self.assertNotIn('class="nicho-capa"', html)
         self.assertNotIn("Estratégia de áudio", html)
         self.assertIn('name="modo_musica" value="biblioteca"', html)
         self.assertIn('name="modo" value="automatico"', html)
+        self.assertIn('name="piloto" value="1" checked', html)
+        self.assertIn("Gerar no automático", html)
+        self.assertIn("Começar minha série", html)
         self.assertIn("Você pode mudar tudo depois na central da série", html)
         self.assertIn("dica-arraste", html)
         self.assertIn("if (document.hidden) pararAtual()", html)
         self.assertIn("window.addEventListener('pagehide', pararAtual)", html)
+        self.assertIn("Ligue o piloto automático", boas_vindas)
+        self.assertNotIn("Nada é gerado até você mandar", boas_vindas)
 
 
 if __name__ == "__main__":

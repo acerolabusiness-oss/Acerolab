@@ -127,21 +127,21 @@
   <div class="piloto-simples">
     <div class="piloto-simples-cabeca">
       <span class="selo viva">Piloto automático</span>
-      <h2>Como a série começa?</h2>
+      <h2>Como você quer começar?</h2>
     </div>
     <div class="escolhas piloto-opcoes">
       <label class="escolha">
-        <input type="radio" name="piloto" value="0" checked>
-        <h3>Eu aprovo os temas</h3>
-        <p>O ACEROLAB sugere e você decide o que vira vídeo.</p>
+        <input type="radio" name="piloto" value="1" checked>
+        <h3>Gerar no automático <span class="selo viva">Recomendado</span></h3>
+        <p>O ACEROLAB escolhe temas inéditos e produz na frequência escolhida.</p>
       </label>
       <label class="escolha">
-        <input type="radio" name="piloto" value="1">
-        <h3>Gerar sozinho</h3>
-        <p>Um tema novo entra automaticamente na frequência escolhida.</p>
+        <input type="radio" name="piloto" value="0">
+        <h3>Eu aprovo os temas</h3>
+        <p>Você confere cada sugestão antes de ela virar vídeo.</p>
       </label>
     </div>
-    <label class="campo frequencia-piloto" hidden><span>Frequência</span>
+    <label class="campo frequencia-piloto"><span>Frequência</span>
       <select name="frequencia">
         <option value="diario">Todo dia</option>
         <option value="tres_semana">3 vezes por semana</option>
@@ -160,7 +160,7 @@
 <div class="navegar">
   <button type="button" class="botao calmo" id="voltar">Voltar</button>
   <button type="button" class="botao" id="seguir">Continuar</button>
-  <button type="submit" class="botao" id="criar" hidden>Criar série</button>
+  <button type="submit" class="botao" id="criar" hidden>Começar minha série</button>
 </div>
 </form>
 {% endblock %}
