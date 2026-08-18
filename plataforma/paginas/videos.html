@@ -27,9 +27,15 @@
       <small>{{ v['serie_nome'] }}</small>
     </div>
     {% else %}
-    <div class="fita fazendo">
+    {% set progresso = v['progresso'] or 0 %}
+    <div class="fita fazendo" data-video-progresso="{{ v['id'] }}">
       <div style="width:100%">
-        <span class="selo viva"><i class="ponto pulsa"></i>{{ 'Na fila' if v['estado'] == 'na_fila' else v['etapa'] }}</span>
+        <span class="selo viva"><i class="ponto pulsa"></i><span data-etapa>{{ 'Na fila' if v['estado'] == 'na_fila' else v['etapa'] }}</span></span>
+        <div class="progresso-producao" role="progressbar" aria-label="Progresso do vídeo"
+             aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progresso }}">
+          <i data-progresso-bar style="width:{{ progresso }}%"></i>
+        </div>
+        <small class="progresso-numero" data-progresso-numero>{{ progresso }}%</small>
         <p style="color:var(--tinta-3);font-size:12.5px;margin:12px 0 0">{{ v['serie_nome'] }}</p>
       </div>
     </div>
@@ -49,7 +55,7 @@
 {% else %}
 <div class="vazio">
   <h2>Nenhum vídeo ainda</h2>
-  <p>Vídeo só existe depois que você manda gerar um tema de alguma série.</p>
+  <p>Crie uma série com o piloto ligado para produzir automaticamente, ou aprove um tema manualmente.</p>
   <a class="botao" href="/series">Ver minhas séries</a>
 </div>
 {% endif %}
@@ -73,6 +79,29 @@ if (tocador) {
   });
   tocador.addEventListener('close', () => { fita.pause(); fita.removeAttribute('src'); fita.load(); });
 }
-if (document.querySelector('.fita.fazendo')) setTimeout(() => location.reload(), 5000);
+const producoes = [...document.querySelectorAll('[data-video-progresso]')];
+async function acompanharProducoes() {
+  if (!producoes.length) return;
+  try {
+    const resposta = await fetch('/api/estado', {headers:{accept:'application/json'}, cache:'no-store'});
+    if (!resposta.ok) throw new Error('estado indisponível');
+    const dados = await resposta.json();
+    const ativos = new Map(dados.videos.map(v => [String(v.id), v]));
+    for (const cartao of producoes) {
+      const video = ativos.get(cartao.dataset.videoProgresso);
+      if (!video) { location.reload(); return; }
+      const progresso = Math.max(0, Math.min(99, Number(video.progresso) || 0));
+      const etapa = cartao.querySelector('[data-etapa]');
+      if (etapa) etapa.textContent = video.estado === 'na_fila' ? 'Na fila' : video.etapa;
+      const barra = cartao.querySelector('[data-progresso-bar]');
+      if (barra) barra.style.width = `${progresso}%`;
+      const numero = cartao.querySelector('[data-progresso-numero]');
+      if (numero) numero.textContent = `${progresso}%`;
+      cartao.querySelector('[role=progressbar]')?.setAttribute('aria-valuenow', String(progresso));
+    }
+  } catch (_) {}
+  setTimeout(acompanharProducoes, 1800);
+}
+acompanharProducoes();
 </script>
 {% endblock %}

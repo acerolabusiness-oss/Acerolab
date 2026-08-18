@@ -824,7 +824,7 @@ def estado(request: Request, usuario=Depends(exigir)):
     """Progresso da fila, para a tela atualizar sem recarregar."""
     with aberto() as con:
         linhas = varios(con, """
-            SELECT id, estado, etapa, titulo, custo_reais, erro
+            SELECT id, estado, etapa, progresso, titulo, custo_reais, erro
               FROM videos WHERE usuario_id=? AND estado IN ('na_fila','gerando')
         """, usuario["id"])
     return JSONResponse({"videos": [dict(l) for l in linhas]})

@@ -2,7 +2,10 @@
 {% block titulo %}{{ serie['nome'] }} · ACEROLAB{% endblock %}
 {% set secao = 'series' %}
 
-{% set ETAPAS = ['roteiro', 'direção visual', 'narração', 'legendas', 'montagem', 'capa'] %}
+{% set ETAPAS = [
+  ('Roteiro', 6), ('Direção visual', 16), ('Imagens e movimento', 24),
+  ('Narração', 58), ('Legendas', 70), ('Renderização', 84), ('Finalização', 96)
+] %}
 
 {% macro fita(v) %}
   {% if v['estado'] == 'pronto' %}
@@ -29,16 +32,20 @@
   </div>
 
   {% else %}
-  {% set atual = v['etapa'] %}
-  <div class="fita fazendo">
+  {% set progresso = v['progresso'] or 0 %}
+  <div class="fita fazendo" data-video-progresso="{{ v['id'] }}">
     <div style="width:100%">
-      <span class="selo viva"><i class="ponto pulsa"></i>{{ 'Na fila' if v['estado'] == 'na_fila' else 'Produzindo' }}</span>
+      <span class="selo viva"><i class="ponto pulsa"></i><span data-etapa>{{ 'Na fila' if v['estado'] == 'na_fila' else v['etapa'] }}</span></span>
+      <div class="progresso-producao" role="progressbar" aria-label="Progresso do vídeo"
+           aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progresso }}">
+        <i data-progresso-bar style="width:{{ progresso }}%"></i>
+      </div>
+      <small class="progresso-numero" data-progresso-numero>{{ progresso }}%</small>
       <ul class="etapas">
-        {% set ns = namespace(passou=true) %}
-        {% for e in ETAPAS %}
-          {% if e == atual %}{% set ns.passou = false %}{% endif %}
-          <li class="{{ 'agora' if e == atual else ('feita' if ns.passou and atual else '') }}">
-            <i></i>{{ e }}
+        {% for nome, minimo in ETAPAS %}
+          {% set seguinte = ETAPAS[loop.index][1] if not loop.last else 101 %}
+          <li data-minimo="{{ minimo }}" class="{{ 'agora' if progresso >= minimo and progresso < seguinte else ('feita' if progresso >= seguinte else '') }}">
+            <i></i>{{ nome }}
           </li>
         {% endfor %}
       </ul>
@@ -135,15 +142,22 @@
     </div>
   </div>
   {% if serie['piloto_ativo'] %}
-  <small class="proximo-ciclo">Próximo ciclo: {{ serie['proxima_geracao'][:16]|replace('T', ' ') }} UTC · a franquia e a fila continuam valendo.</small>
+  <small class="proximo-ciclo">Piloto ligado: o próximo tema entra sozinho na produção
+    <time data-horario-utc="{{ serie['proxima_geracao'] }}">{{ serie['proxima_geracao'][:16]|replace('T', ' ') }} UTC</time>.
+    A franquia e a fila continuam valendo.</small>
   {% endif %}
 </form>
 
 <!-- ───────── pautas esperando ───────── -->
-<h2 style="font-size:15px;margin:26px 0 4px">Temas propostos</h2>
+<h2 style="font-size:15px;margin:26px 0 4px">{{ 'Próximos temas do piloto' if serie['piloto_ativo'] else 'Temas propostos' }}</h2>
 <p style="color:var(--tinta-2);font-size:14px;margin:0 0 16px;max-width:60ch">
+  {% if serie['piloto_ativo'] %}
+  O piloto usa o tema mais antigo desta lista no próximo ciclo. Você ainda pode gerar agora,
+  descartar o que não gostar ou desligar o automático acima.
+  {% else %}
   Leia antes de gastar. Só o que você mandar gerar vira imagem e narração — o resto não
-  custa nada, e a série não vai repetir esses temas depois.</p>
+  custa nada, e a série não vai repetir esses temas depois.
+  {% endif %}</p>
 
 {% if pautas %}
 <div class="pautas">
@@ -189,7 +203,9 @@
   {% for v in videos %}{{ fita(v) }}{% endfor %}
 </div>
 {% else %}
-<p style="color:var(--tinta-2)">Nenhum vídeo ainda. Mande gerar um tema acima.</p>
+<p style="color:var(--tinta-2)">
+  {{ 'Nenhum vídeo ainda. O primeiro entra automaticamente quando a fila chegar a esta série.' if serie['piloto_ativo'] else 'Nenhum vídeo ainda. Mande gerar um tema acima.' }}
+</p>
 {% endif %}
 
 <dialog class="tocador" id="tocador">
@@ -222,8 +238,52 @@ document.addEventListener('click', e => {
 });
 tocador.addEventListener('close', () => { fita.pause(); fita.removeAttribute('src'); fita.load(); });
 
-// Enquanto houver vídeo em produção, a página se atualiza sozinha.
-if (document.querySelector('.fita.fazendo')) setTimeout(() => location.reload(), 5000);
+// Progresso vivo. Recarrega apenas quando um item sai da fila (pronto/falhou),
+// preservando a posição da página enquanto as etapas avançam.
+const producoes = [...document.querySelectorAll('[data-video-progresso]')];
+async function acompanharProducoes() {
+  if (!producoes.length) return;
+  try {
+    const resposta = await fetch('/api/estado', {headers:{accept:'application/json'}, cache:'no-store'});
+    if (!resposta.ok) throw new Error('estado indisponível');
+    const dados = await resposta.json();
+    const ativos = new Map(dados.videos.map(v => [String(v.id), v]));
+    for (const cartao of producoes) {
+      const video = ativos.get(cartao.dataset.videoProgresso);
+      if (!video) { location.reload(); return; }
+      const progresso = Math.max(0, Math.min(99, Number(video.progresso) || 0));
+      const etapa = cartao.querySelector('[data-etapa]');
+      if (etapa) etapa.textContent = video.estado === 'na_fila' ? 'Na fila' : video.etapa;
+      const barra = cartao.querySelector('[data-progresso-bar]');
+      if (barra) barra.style.width = `${progresso}%`;
+      const numero = cartao.querySelector('[data-progresso-numero]');
+      if (numero) numero.textContent = `${progresso}%`;
+      const medidor = cartao.querySelector('[role=progressbar]');
+      medidor?.setAttribute('aria-valuenow', String(progresso));
+      const etapas = [...cartao.querySelectorAll('[data-minimo]')];
+      etapas.forEach((item, indice) => {
+        const minimo = Number(item.dataset.minimo);
+        const seguinte = Number(etapas[indice + 1]?.dataset.minimo || 101);
+        item.classList.toggle('agora', progresso >= minimo && progresso < seguinte);
+        item.classList.toggle('feita', progresso >= seguinte);
+      });
+    }
+  } catch (_) {
+    // Perda momentânea de rede não muda o estado visível; a próxima leitura tenta de novo.
+  }
+  setTimeout(acompanharProducoes, 1800);
+}
+acompanharProducoes();
+
+// A agenda é armazenada em UTC, mas aparece no horário do aparelho da pessoa.
+document.querySelectorAll('[data-horario-utc]').forEach(elemento => {
+  const data = new Date(elemento.dataset.horarioUtc);
+  if (!Number.isNaN(data.getTime())) {
+    elemento.textContent = data.toLocaleString(undefined, {
+      dateStyle:'short', timeStyle:'short'
+    });
+  }
+});
 
 const direcaoModoMusica = document.getElementById('direcao-modo-musica');
 function atualizarDirecaoAudio() {

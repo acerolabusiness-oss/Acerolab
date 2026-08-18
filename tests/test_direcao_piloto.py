@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sqlite3
 import unittest
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 from esteira.direcao import cenas_com_movimento
@@ -35,8 +36,9 @@ class DirecaoTest(unittest.TestCase):
     def test_hibrido_sempre_move_gancho_e_final(self):
         escolhidas = cenas_com_movimento(roteiro_teste())
         self.assertIn(0, escolhidas)
+        self.assertIn(1, escolhidas)
         self.assertIn(9, escolhidas)
-        self.assertGreaterEqual(len(escolhidas), 4)
+        self.assertEqual(len(escolhidas), 4)
 
     def test_cortes_seguem_a_fala_e_preservam_duracao(self):
         roteiro = roteiro_teste()
@@ -105,6 +107,62 @@ class PilotoTest(unittest.TestCase):
         self.assertEqual(video["plataforma_musica"], "")
         relogio = um(self.con, "SELECT proxima_geracao FROM series WHERE id=?", serie)
         self.assertGreater(relogio["proxima_geracao"], agora())
+
+        # Se o relógio vencer enquanto o vídeo ainda está na fila, o piloto
+        # não perde o ciclo: deixa a data vencida para tentar assim que acabar.
+        vencido = agora()
+        self.con.execute("UPDATE series SET proxima_geracao=? WHERE id=?",
+                         (vencido, serie))
+        with patch.dict(os.environ, {"ACEROLAB_ALLOW_UNPAID": "1"}):
+            self.assertEqual(piloto.acionar_devidos(self.con), 0)
+        mantido = um(self.con, "SELECT proxima_geracao FROM series WHERE id=?", serie)
+        self.assertEqual(mantido["proxima_geracao"], vencido)
+
+    def test_progresso_da_etapa_nunca_volta(self):
+        usuario = inserir(self.con,
+            "INSERT INTO usuarios(email,senha,nome,criado_em) VALUES(?,?,?,?)",
+            "progresso@teste.local", "x", "Progresso", agora())
+        serie = inserir(self.con, """
+            INSERT INTO series
+              (usuario_id,nome,nicho,nicho_texto,idioma,voz,musicas,estilo,
+               legenda,duracao,modo,modelo_video,criada_em)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, usuario, "Série", "historia", "historia", "pt-BR", "", "[]",
+             "cinematografico", "traco-forte", "curto", "automatico", "wan",
+             agora())
+        video = inserir(self.con, """
+            INSERT INTO videos(serie_id,usuario_id,criado_em) VALUES(?,?,?)
+        """, serie, usuario, agora())
+        fila._etapa(self.con, video, "renderizando vídeo", 84)
+        fila._etapa(self.con, video, "evento atrasado", 24)
+        estado = um(self.con, "SELECT etapa, progresso FROM videos WHERE id=?", video)
+        self.assertEqual(estado["etapa"], "renderizando vídeo")
+        self.assertEqual(estado["progresso"], 84)
+
+    def test_falha_de_pauta_reagenda_sem_perder_a_semana(self):
+        usuario = inserir(self.con,
+            "INSERT INTO usuarios(email,senha,nome,criado_em) VALUES(?,?,?,?)",
+            "reagenda@teste.local", "x", "Reagenda", agora())
+        serie = inserir(self.con, """
+            INSERT INTO series
+              (usuario_id,nome,nicho,nicho_texto,idioma,voz,musicas,estilo,
+               legenda,duracao,modo,modelo_video,piloto_ativo,frequencia,
+               proxima_geracao,criada_em)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, usuario, "Série", "historia", "historia", "pt-BR", "", "[]",
+             "cinematografico", "traco-forte", "curto", "automatico", "wan",
+             1, "semanal", agora(), agora())
+
+        with (patch.dict(os.environ, {"ACEROLAB_ALLOW_UNPAID": "1"}),
+              patch("plataforma.piloto.temas.propor",
+                    side_effect=RuntimeError("fornecedor indisponível"))):
+            self.assertEqual(piloto.acionar_devidos(self.con), 0)
+
+        self.assertIsNone(um(self.con, "SELECT id FROM videos WHERE serie_id=?", serie))
+        reagendada = um(self.con, "SELECT proxima_geracao FROM series WHERE id=?", serie)
+        espera = datetime.fromisoformat(reagendada["proxima_geracao"]) - datetime.now(timezone.utc)
+        self.assertGreater(espera.total_seconds(), 0)
+        self.assertLess(espera.total_seconds(), 20 * 60)
 
 
 if __name__ == "__main__":

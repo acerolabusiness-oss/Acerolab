@@ -62,8 +62,16 @@ def montar_serie(linha: sqlite3.Row, video: sqlite3.Row | None = None) -> Serie:
 
 # ──────────────────────────── um vídeo ───────────────────────────────
 
-def _etapa(con: sqlite3.Connection, video_id: int, nome: str) -> None:
-    con.execute("UPDATE videos SET etapa = ? WHERE id = ?", (nome, video_id))
+def _etapa(con: sqlite3.Connection, video_id: int, nome: str,
+           progresso: int) -> None:
+    """Publica uma etapa monotônica para a interface acompanhar ao vivo."""
+    con.execute("""
+        UPDATE videos
+           SET etapa = CASE WHEN ? >= progresso THEN ? ELSE etapa END,
+               progresso = MAX(progresso, ?)
+         WHERE id = ?
+    """, (max(0, min(99, progresso)), nome,
+          max(0, min(99, progresso)), video_id))
 
 
 def produzir(con: sqlite3.Connection, video: sqlite3.Row) -> None:
@@ -83,19 +91,22 @@ def produzir(con: sqlite3.Connection, video: sqlite3.Row) -> None:
             assunto = (f"um vídeo com o título \"{tema['titulo']}\", "
                        f"abrindo a narração com: {tema['gancho']}")
 
-    _etapa(con, video["id"], "roteiro")
+    _etapa(con, video["id"], "escrevendo roteiro", 6)
     roteiro = etapa_roteiro.gerar(serie, custos, assunto=assunto)
     con.execute("UPDATE videos SET titulo = ? WHERE id = ?",
                 (roteiro.titulo, video["id"]))
 
-    _etapa(con, video["id"], "direção visual")
+    _etapa(con, video["id"], "dirigindo cenas", 16)
     if serie.modo == "video":
+        _etapa(con, video["id"], "animando cenas", 24)
         quadros = etapa_clipes.gerar(
             roteiro, serie, pasta / "cenas", custos, modelo=serie.modelo_video)
     elif serie.modo == "automatico":
+        _etapa(con, video["id"], "gerando imagens", 24)
         quadros = etapa_imagens.gerar(roteiro, serie, pasta / "cenas", custos)
         indices = etapa_direcao.cenas_com_movimento(roteiro)
         try:
+            _etapa(con, video["id"], "animando melhores cenas", 42)
             movimentos = etapa_clipes.gerar(
                 roteiro, serie, pasta / "cenas", custos,
                 modelo=serie.modelo_video, indices=indices,
@@ -108,12 +119,13 @@ def produzir(con: sqlite3.Connection, video: sqlite3.Row) -> None:
             # as imagens já prontas viram o fallback visual daquela execução.
             print(f"[fila] clipes do vídeo {video['id']} indisponíveis: {erro}")
     else:
+        _etapa(con, video["id"], "gerando imagens", 24)
         quadros = etapa_imagens.gerar(roteiro, serie, pasta / "cenas", custos)
 
-    _etapa(con, video["id"], "narração")
+    _etapa(con, video["id"], "criando narração", 58)
     audio, _ = etapa_narracao.gerar(roteiro, serie, pasta / "narracao.mp3", custos)
 
-    _etapa(con, video["id"], "legendas")
+    _etapa(con, video["id"], "sincronizando legendas", 70)
     palavras = etapa_legendas.transcrever(audio, serie.idioma, custos)
     estilo_legenda = catalogo.LEGENDA_POR_CHAVE.get(
         linha_serie["legenda"], catalogo.LEGENDAS[0])
@@ -131,7 +143,7 @@ def produzir(con: sqlite3.Connection, video: sqlite3.Row) -> None:
             divisor_contorno=estilo_legenda.peso_contorno,
         )
 
-    _etapa(con, video["id"], "montagem")
+    _etapa(con, video["id"], "renderizando vídeo", 84)
     (pasta / "midias.json").write_text(
         json.dumps([p.name for p in quadros], ensure_ascii=False, indent=2),
         encoding="utf-8")
@@ -142,7 +154,7 @@ def produzir(con: sqlite3.Connection, video: sqlite3.Row) -> None:
     custos.registrar("render", "segundos", segundos_render, 0.0,
                      f"{segundos_render:.1f}s de CPU (custo de servidor, não de API)")
 
-    _etapa(con, video["id"], "capa")
+    _etapa(con, video["id"], "finalizando capa", 96)
     capas.gerar(arquivo, pasta / "capa.webp")
     custos.salvar(pasta / "custo.json")
     (pasta / "roteiro.json").write_text(
@@ -150,7 +162,7 @@ def produzir(con: sqlite3.Connection, video: sqlite3.Row) -> None:
 
     con.execute("""
         UPDATE videos
-           SET estado='pronto', etapa='', arquivo=?, pasta=?,
+           SET estado='pronto', etapa='', progresso=100, arquivo=?, pasta=?,
                custo_reais=?, segundos=?, terminado_em=?
          WHERE id=?
     """, (str(arquivo), str(pasta), round(custos.total_real, 4),
@@ -200,7 +212,7 @@ def humanizar(erro: Exception) -> str:
 def _pegar(con: sqlite3.Connection) -> sqlite3.Row | None:
     """Reserva o vídeo mais antigo da fila, de forma atômica."""
     cur = con.execute("""
-        UPDATE videos SET estado='gerando', etapa='começando'
+        UPDATE videos SET estado='gerando', etapa='preparando produção', progresso=2
          WHERE id = (SELECT id FROM videos WHERE estado='na_fila'
                       ORDER BY id LIMIT 1)
         RETURNING id
@@ -215,7 +227,10 @@ def rodar() -> None:
     """Laço do trabalhador. Roda numa thread daemon."""
     with aberto() as con:
         # Vídeo que ficou 'gerando' quando o processo caiu volta pra fila.
-        con.execute("UPDATE videos SET estado='na_fila', etapa='' WHERE estado='gerando'")
+        con.execute("""
+            UPDATE videos SET estado='na_fila', etapa='', progresso=0
+             WHERE estado='gerando'
+        """)
         while not _parar.is_set():
             try:
                 video = _pegar(con)

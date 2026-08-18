@@ -20,7 +20,9 @@ Regras da narração:
 - Os primeiros 3 segundos decidem tudo. Abra pelo fato mais surpreendente,
   nunca por saudação ou por anunciar o que virá.
 - Frases curtas, voz ativa, linguagem falada. É para ser ouvido, não lido.
-- Cada cena narra 1 ideia. Sem "além disso", "por fim", "em resumo".
+- Cada cena narra 1 ideia em uma frase de 7 a 16 palavras, pensada para durar
+  de 2 a 4 segundos. Nunca esconda duas batidas narrativas na mesma cena.
+- Sem "além disso", "por fim", "em resumo".
 - Termine com uma frase que dê vontade de comentar, não com "se inscreva".
 - A narração vai INTEIRA no idioma pedido, sem exceção: nomes de pessoa,
   de lugar, títulos de nobreza e obras entram na forma consagrada daquele
@@ -37,6 +39,8 @@ Regras de DIREÇÃO VISUAL:
   central parado, pessoa apenas olhando para a câmera e composição genérica.
 - Varie deliberadamente plano geral, detalhe macro, ponto de vista, plongée,
   contra-plongée e silhueta. Cenas vizinhas não podem repetir o mesmo plano.
+- Cenas vizinhas também não podem repetir a mesma ação ou composição. Quando
+  o assunto continua, mostre uma consequência, detalhe ou ponto de vista novo.
 - Nada de texto na imagem, nada de logotipo, nada de marca d'água.
 - Enquadramento vertical 9:16. Deixe área negativa útil para a legenda na
   faixa inferior sem esconder a ação principal.

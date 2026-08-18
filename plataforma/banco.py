@@ -86,6 +86,7 @@ CREATE TABLE IF NOT EXISTS videos (
     titulo        TEXT NOT NULL DEFAULT '',
     estado        TEXT NOT NULL DEFAULT 'na_fila',  -- na_fila|gerando|pronto|falhou
     etapa         TEXT NOT NULL DEFAULT '',         -- o que está rodando agora
+    progresso     INTEGER NOT NULL DEFAULT 0,        -- 0..100 para atualização ao vivo
     pasta         TEXT NOT NULL DEFAULT '',
     arquivo       TEXT NOT NULL DEFAULT '',
     custo_reais   REAL NOT NULL DEFAULT 0,
@@ -155,6 +156,7 @@ ACRESCIMOS: tuple[tuple[str, str, str], ...] = (
     ("series", "plataforma_musica", "TEXT NOT NULL DEFAULT ''"),
     ("videos", "modo_musica", "TEXT NOT NULL DEFAULT 'biblioteca'"),
     ("videos", "plataforma_musica", "TEXT NOT NULL DEFAULT ''"),
+    ("videos", "progresso", "INTEGER NOT NULL DEFAULT 0"),
 )
 
 

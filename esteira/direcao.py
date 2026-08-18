@@ -14,7 +14,7 @@ def cenas_com_movimento(roteiro: Roteiro, proporcao: float = 0.40) -> list[int]:
     total = len(roteiro.cenas)
     if total == 0:
         return []
-    alvo = min(total, max(2, round(total * proporcao)))
+    alvo = min(total, max(3, round(total * proporcao)))
     prioridade = sorted(
         range(total),
         key=lambda i: (
@@ -24,10 +24,18 @@ def cenas_com_movimento(roteiro: Roteiro, proporcao: float = 0.40) -> list[int]:
         ),
         reverse=True,
     )
-    escolhidas = set(prioridade[:alvo])
-    escolhidas.add(0)
+    # As duas primeiras batidas formam o gancho: interrupção + prova visual.
+    # Elas, junto do encerramento, são obrigatórias; o restante completa o
+    # orçamento sem aumentar a quantidade total de clipes.
+    obrigatorias = {0}
     if total > 1:
-        escolhidas.add(total - 1)
+        obrigatorias.add(1)
+        obrigatorias.add(total - 1)
+    escolhidas = set(obrigatorias)
+    for indice in prioridade:
+        if len(escolhidas) >= alvo:
+            break
+        escolhidas.add(indice)
 
     # Dois clipes adjacentes longos parecem uma única cena. Quando dá, troca
     # o menos importante por outra batida para criar contraste.
@@ -40,7 +48,8 @@ def cenas_com_movimento(roteiro: Roteiro, proporcao: float = 0.40) -> list[int]:
                 (i for i in prioridade if i not in escolhidas and i - 1 not in escolhidas),
                 None,
             )
-            if alternativa is not None and roteiro.cenas[indice].papel not in {"gancho", "final"}:
+            if (alternativa is not None and indice not in obrigatorias
+                    and roteiro.cenas[indice].papel not in {"gancho", "final"}):
                 escolhidas.remove(indice)
                 escolhidas.add(alternativa)
     return sorted(escolhidas)
