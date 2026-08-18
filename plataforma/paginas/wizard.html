@@ -102,7 +102,10 @@
           <svg class="icone-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z"/></svg>
           <svg class="icone-pausa" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1h3v10H2zm5 0h3v10H7z"/></svg>
         </button>
-        <div><h3>{{ m.nome }}</h3><p>{{ m.genero }}</p></div>
+        <div>
+          <h3>{{ m.nome }}</h3>
+          <p>{{ m.genero }}{% if m.autor %} · {{ m.autor }} · {{ m.licenca }}{% endif %}</p>
+        </div>
       </div>
     </label>
     {% endfor %}

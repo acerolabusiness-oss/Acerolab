@@ -167,6 +167,8 @@ class Musica:
     arquivo: str
     nome: str
     genero: str
+    autor: str = ""
+    licenca: str = ""
 
     @property
     def caminho(self) -> Path:
@@ -181,15 +183,20 @@ class Musica:
 # nomes — o que faltar simplesmente não aparece no wizard, em vez de virar
 # uma opção que quebra na hora de gerar.
 MUSICAS_CATALOGO: tuple[Musica, ...] = (
-    Musica("melodia-sinistra.mp3", "Melodia sinistra", "Terror"),
+    Musica("melodia-sinistra.mp3", "Melodia sinistra", "Terror",
+           "John Bartmann", "CC0"),
     Musica("piano-de-terror.mp3", "Piano de terror", "Terror"),
-    Musica("misterio-sem-solucao.mp3", "Mistério sem solução", "Suspense"),
-    Musica("calmaria.mp3", "Calmaria antes da tempestade", "Suspense"),
+    Musica("misterio-sem-solucao.mp3", "Mistério sem solução", "Suspense",
+           "John Bartmann", "CC0"),
+    Musica("calmaria.mp3", "Calmaria antes da tempestade", "Suspense",
+           "John Bartmann", "CC0"),
     Musica("sinfonia-epica.mp3", "Sinfonia épica", "Épico"),
     Musica("marcha-lenta.mp3", "Marcha lenta", "Épico"),
     Musica("oito-bits.mp3", "8-bit sombrio", "Retrô"),
-    Musica("respiro.mp3", "Respiro", "Reflexivo"),
-    Musica("horizonte.mp3", "Horizonte", "Motivacional"),
+    Musica("respiro.mp3", "Respiro", "Reflexivo",
+           "John Bartmann", "CC0"),
+    Musica("horizonte.mp3", "Horizonte", "Motivacional",
+           "John Bartmann", "CC0"),
 )
 
 

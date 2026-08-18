@@ -4,7 +4,7 @@ from __future__ import annotations
 import unittest
 
 from esteira.config import RAIZ
-from plataforma.catalogo import NICHOS, VOZES
+from plataforma.catalogo import NICHOS, VOZES, musicas_disponiveis
 
 
 class CatalogoVisualTest(unittest.TestCase):
@@ -38,6 +38,24 @@ class CatalogoVisualTest(unittest.TestCase):
             "@media (max-width:460px){.nichos-visuais{grid-template-columns:1fr}}",
             css,
         )
+
+    def test_trilhas_instaladas_sao_mp3_cc0(self) -> None:
+        trilhas = {t.arquivo: t for t in musicas_disponiveis()}
+        esperadas = {
+            "melodia-sinistra.mp3",
+            "misterio-sem-solucao.mp3",
+            "calmaria.mp3",
+            "horizonte.mp3",
+            "respiro.mp3",
+        }
+
+        self.assertTrue(esperadas.issubset(trilhas))
+        for nome in esperadas:
+            trilha = trilhas[nome]
+            self.assertEqual(trilha.caminho.suffix, ".mp3")
+            self.assertGreater(trilha.caminho.stat().st_size, 1_000_000)
+            self.assertEqual(trilha.autor, "John Bartmann")
+            self.assertEqual(trilha.licenca, "CC0")
 
 
 if __name__ == "__main__":
